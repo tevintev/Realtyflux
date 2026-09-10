@@ -1,0 +1,114 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model CompanySettings {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  companyName  String   @db.VarChar(255)
+  logo         String?  @db.VarChar(500)
+  mission      String?
+  about        String?
+  email        String?  @db.VarChar(255)
+  phone        String?  @db.VarChar(50)
+  address      String?
+  facebookUrl  String?  @db.VarChar(500)
+  instagramUrl String?  @db.VarChar(500)
+  twitterUrl   String?  @db.VarChar(500)
+  linkedinUrl  String?  @db.VarChar(500)
+  createdAt    DateTime @default(now()) @db.Timestamptz
+  updatedAt    DateTime @default(now()) @db.Timestamptz
+
+  @@map("company_settings")
+}
+
+model Property {
+  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title            String          @db.VarChar(255)
+  slug             String          @unique @db.VarChar(255)
+  description      String
+  shortDescription String
+  price            Decimal         @db.Decimal(15, 2)
+  currency         String          @default("KES") @db.VarChar(10)
+  propertyType     String          @db.VarChar(50)
+  listingType      String          @db.VarChar(50)
+  status           String          @default("on-sale") @db.VarChar(50)
+  bedrooms         Int             @default(0)
+  bathrooms        Int             @default(0)
+  size             Decimal         @db.Decimal(10, 2)
+  sizeUnit         String          @default("sq ft") @db.VarChar(20)
+  location         String          @db.VarChar(255)
+  address          String          @db.VarChar(255)
+  featuredImage    String?         @db.VarChar(500)
+  amenities        String[]        @default([])
+  yearBuilt        Int?
+  isFeatured       Boolean         @default(false)
+  agent            String?         @db.VarChar(100)
+  createdAt        DateTime        @default(now()) @db.Timestamptz
+  updatedAt        DateTime        @default(now()) @db.Timestamptz
+  images           PropertyImage[]
+  bookings         Booking[]
+  messages         Message[]
+
+  @@map("properties")
+}
+
+model PropertyImage {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  propertyId String   @db.Uuid
+  imageUrl   String   @db.VarChar(500)
+  caption    String?  @db.VarChar(255)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now()) @db.Timestamptz
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("property_images")
+}
+
+model Booking {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  propertyId    String   @db.Uuid
+  fullName      String   @db.VarChar(255)
+  phone         String   @db.VarChar(50)
+  email         String   @db.VarChar(255)
+  preferredDate DateTime @db.Date
+  preferredTime DateTime @db.Time(6)
+  message       String?
+  status        String   @default("pending") @db.VarChar(50)
+  createdAt     DateTime @default(now()) @db.Timestamptz
+  updatedAt     DateTime @default(now()) @db.Timestamptz
+  property      Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("bookings")
+}
+
+model Message {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String   @db.VarChar(255)
+  email      String   @db.VarChar(255)
+  phone      String?  @db.VarChar(50)
+  subject    String   @db.VarChar(255)
+  message    String
+  propertyId String?  @db.Uuid
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now()) @db.Timestamptz
+  updatedAt  DateTime @default(now()) @db.Timestamptz
+  property   Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+
+  @@map("messages")
+}
+
+model AdminUser {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  username  String   @unique @db.VarChar(100)
+  password  String   @db.VarChar(255)
+  name      String?  @db.VarChar(100)
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @default(now()) @db.Timestamptz
+
+  @@map("admin_users")
+}
