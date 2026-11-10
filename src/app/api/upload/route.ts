@@ -2,6 +2,8 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
+import { UPLOADS_DIR } from "@/lib/uploads";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -51,6 +53,15 @@ function sanitizeBaseName(fileName: string) {
 }
 
 export async function POST(request: Request) {
+  // /api/* is not covered by middleware.ts's matcher, so this route must
+  // check the admin session itself — without this, anyone on the internet
+  // could upload arbitrary files (disk exhaustion, hosting abuse) with no
+  // authentication at all.
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
   try {
     const formData = await request.formData();
     const files = formData
@@ -61,8 +72,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No files were uploaded." }, { status: 400 });
     }
 
-    const uploadsDirectory = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadsDirectory, { recursive: true });
+    await mkdir(UPLOADS_DIR, { recursive: true });
 
     const uploadedFiles = await Promise.all(
       files.map(async (file) => {
@@ -82,7 +92,7 @@ export async function POST(request: Request) {
         const extension = path.extname(file.name).toLowerCase() || MIME_EXTENSION_MAP[file.type];
         const safeBaseName = sanitizeBaseName(file.name);
         const fileName = `${Date.now()}-${randomUUID()}-${safeBaseName}${extension}`;
-        const absoluteFilePath = path.join(uploadsDirectory, fileName);
+        const absoluteFilePath = path.join(UPLOADS_DIR, fileName);
         const fileBuffer = Buffer.from(await file.arrayBuffer());
 
         await writeFile(absoluteFilePath, fileBuffer);

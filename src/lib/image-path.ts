@@ -1,4 +1,4 @@
-function isVideoFile(path: string): boolean {
+export function isVideoFile(path: string): boolean {
   return /\.(mp4|mov|webm|avi)$/i.test(path);
 }
 
@@ -58,3 +58,9 @@ export function getRenderableMediaList(values: string[] | undefined | null) {
     .filter((value): value is string => Boolean(value));
 }
 
+
+// next/image can only resize same-origin raster images; remote URLs and SVGs
+// are rendered as-is.
+export function isOptimizable(src: string): boolean {
+  return src.startsWith("/") && !/\.svg(\?|$)/i.test(src);
+}

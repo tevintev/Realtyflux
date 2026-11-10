@@ -11,6 +11,7 @@ export async function GET() {
         images: {
           orderBy: { sortOrder: "asc" },
         },
+        agent: true,
       },
       orderBy: { createdAt: "desc" },
     });
@@ -45,7 +46,7 @@ export async function GET() {
         amenities: property.amenities,
         yearBuilt: property.yearBuilt || undefined,
         isFeatured: property.isFeatured,
-        agent: property.agent || undefined,
+        agent: property.agent?.name || undefined,
         createdAt: property.createdAt.toISOString().split("T")[0],
       };
     });

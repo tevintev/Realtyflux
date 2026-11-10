@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { deleteProperty } from "@/app/actions/properties";
 import { Trash2 } from "lucide-react";
 
@@ -13,6 +14,7 @@ export default function DeletePropertyButton({
   propertyId,
   propertyTitle,
 }: DeletePropertyButtonProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const handleDelete = async () => {
@@ -27,7 +29,13 @@ export default function DeletePropertyButton({
     if (res && res.error) {
       alert(res.error);
       setLoading(false);
+      return;
     }
+
+    // deleteProperty() already calls revalidatePath() server-side, but this
+    // page is server-rendered and was already mounted client-side — without
+    // this, the deleted row stays visible until the next manual navigation.
+    router.refresh();
   };
 
   return (

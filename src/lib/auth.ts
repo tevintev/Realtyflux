@@ -2,7 +2,14 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies as getCookies } from "next/headers";
 
 function getKey() {
-  const SECRET_KEY = process.env.JWT_SECRET || "realty_flux_admin_secret_key_change_me_in_production";
+  const SECRET_KEY = process.env.JWT_SECRET;
+  if (!SECRET_KEY) {
+    // No fallback: a hardcoded default here would let anyone who reads this
+    // file forge a valid admin session without knowing the password.
+    throw new Error(
+      "JWT_SECRET is not set. Set it in .env before signing or verifying admin sessions."
+    );
+  }
   return new TextEncoder().encode(SECRET_KEY);
 }
 

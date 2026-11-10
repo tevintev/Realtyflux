@@ -1,4 +1,5 @@
-import { Property, PropertyCategory } from "@/types/property";
+// Sample listings. Only prisma/seed.ts reads this, to fill an empty database.
+import { Property } from "@/types/property";
 
 export const properties: Property[] = [
   {
@@ -20,12 +21,12 @@ export const properties: Property[] = [
     sizeUnit: "sq ft",
     location: "Karen, Nairobi",
     address: "12 Karen Road, Karen, Nairobi",
-    featuredImage: "/properties/villa-1.jpg",
+    featuredImage: "/uploads/1785140461347-23c3410d-8471-48b5-85d6-3d2b25a2c8b5-rfserene.jpg",
     gallery: [
-      "/properties/villa-1.jpg",
-      "/properties/villa-1-2.jpg",
-      "/properties/villa-1-3.jpg",
-      "/properties/villa-1-4.jpg",
+      "/uploads/1785140461347-23c3410d-8471-48b5-85d6-3d2b25a2c8b5-rfserene.jpg",
+      "/uploads/1785139939151-4f3bdce2-cd8b-4a19-9974-af2579fa3d3e-rfsamplevilla.jpg",
+      "/uploads/1785059066136-41d09d57-a93d-4444-8d57-fdb92a7a3fc4-rfh1.jpg",
+      "/uploads/1785059136349-645f4652-e2d2-4db1-a8fb-6589bc1870a9-rfh2.jpg",
     ],
     amenities: [
       "Swimming Pool",
@@ -61,11 +62,11 @@ export const properties: Property[] = [
     sizeUnit: "sq ft",
     location: "Westlands, Nairobi",
     address: "Skyline Towers, Waiyaki Way, Westlands",
-    featuredImage: "/properties/apartment-1.jpg",
+    featuredImage: "/uploads/1785140381824-e4fc1853-cb03-4340-9d77-b15705db827b-rfpent.avif",
     gallery: [
-      "/properties/apartment-1.jpg",
-      "/properties/apartment-1-2.jpg",
-      "/properties/apartment-1-3.jpg",
+      "/uploads/1785140381824-e4fc1853-cb03-4340-9d77-b15705db827b-rfpent.avif",
+      "/uploads/1785059146939-c72e2dd4-750b-4dac-99d3-6363d89b3982-rfh3.jpg",
+      "/uploads/1785059269148-e1eff967-6981-41b5-bf5f-82933554ddbb-rfh4.jpg",
     ],
     amenities: [
       "Rooftop Terrace",
@@ -100,12 +101,12 @@ export const properties: Property[] = [
     sizeUnit: "sq ft",
     location: "Runda, Nairobi",
     address: "8 Runda Drive, Runda Estate",
-    featuredImage: "/properties/house-1.jpg",
+    featuredImage: "/uploads/1785059370149-3afdc91f-9ebb-4add-855b-bbd6e2daca24-rfh5.jpg",
     gallery: [
-      "/properties/house-1.jpg",
-      "/properties/house-1-2.jpg",
-      "/properties/house-1-3.jpg",
-      "/properties/house-1-4.jpg",
+      "/uploads/1785059370149-3afdc91f-9ebb-4add-855b-bbd6e2daca24-rfh5.jpg",
+      "/uploads/1785059288793-20165ae6-90cf-4ba2-8ce8-75049cd47bad-rfh6.jpg",
+      "/uploads/1785059397934-74668d85-2ed9-4860-8f9e-6a43ef49ba3a-rfh7.jpg",
+      "/uploads/1785059358474-cc50f7a6-a447-423c-a5a2-5df5d90a33d3-rfh8.jpg",
     ],
     amenities: [
       "Garden",
@@ -141,11 +142,11 @@ export const properties: Property[] = [
     sizeUnit: "sq ft",
     location: "Nyali, Mombasa",
     address: "Ocean Breeze Residences, Links Road, Nyali",
-    featuredImage: "/properties/apartment-2.jpg",
+    featuredImage: "/uploads/1785140037862-7cf1071e-2386-47cf-85c2-7943daa9ad99-rfsample1.jpg",
     gallery: [
-      "/properties/apartment-2.jpg",
-      "/properties/apartment-2-2.jpg",
-      "/properties/apartment-2-3.jpg",
+      "/uploads/1785140037862-7cf1071e-2386-47cf-85c2-7943daa9ad99-rfsample1.jpg",
+      "/uploads/1785139993021-51acdf4a-823c-483c-806c-dee74e7c1eab-rfsample2.jpg",
+      "/uploads/1785140028257-27ede214-1200-402f-a29f-189d73890fc4-rfsample3.jpg",
     ],
     amenities: [
       "Ocean View",
@@ -180,11 +181,11 @@ export const properties: Property[] = [
     sizeUnit: "sq ft",
     location: "Athi River, Machakos",
     address: "Green Meadows Estate, Athi River",
-    featuredImage: "/properties/townhouse-1.jpg",
+    featuredImage: "/images/rftown.png",
     gallery: [
-      "/properties/townhouse-1.jpg",
-      "/properties/townhouse-1-2.jpg",
-      "/properties/townhouse-1-3.jpg",
+      "/images/rftown.png",
+      "/uploads/1785059130923-5642c529-122c-4c9a-abca-0a3b429cc65b-rfh9.jpg",
+      "/uploads/1785059322115-6db2d136-7c6f-4e65-b5b2-37ab26e1312b-rfh10.jpg",
     ],
     amenities: [
       "Garden",
@@ -218,10 +219,10 @@ export const properties: Property[] = [
     sizeUnit: "sq ft",
     location: "CBD, Nairobi",
     address: "Moi Avenue, Nairobi Central",
-    featuredImage: "/properties/commercial-1.jpg",
+    featuredImage: "/uploads/1785139771455-5ab6db88-6ae4-4529-be8f-ff7c86cc197e-rfplaza.avif",
     gallery: [
-      "/properties/commercial-1.jpg",
-      "/properties/commercial-1-2.jpg",
+      "/uploads/1785139771455-5ab6db88-6ae4-4529-be8f-ff7c86cc197e-rfplaza.avif",
+      "/images/rfcommercial.png",
     ],
     amenities: [
       "Parking",
@@ -255,11 +256,11 @@ export const properties: Property[] = [
     sizeUnit: "sq ft",
     location: "Lavington, Nairobi",
     address: "The Lofts, James Gichuru Road, Lavington",
-    featuredImage: "/properties/loft-1.jpg",
+    featuredImage: "/uploads/1785139834063-696f9e07-26ce-400a-bde0-7ec8a50db422-rfsample4.jpg",
     gallery: [
-      "/properties/loft-1.jpg",
-      "/properties/loft-1-2.jpg",
-      "/properties/loft-1-3.jpg",
+      "/uploads/1785139834063-696f9e07-26ce-400a-bde0-7ec8a50db422-rfsample4.jpg",
+      "/uploads/1785139496610-1a4ff928-01e1-4552-a2f0-97ef46937d5b-rfsample5.jpg",
+      "/uploads/1785139669166-013f7b5e-eee0-4aa2-9489-de2174b04bf8-rfsample6.jpeg",
     ],
     amenities: [
       "Co-working Space",
@@ -293,11 +294,11 @@ export const properties: Property[] = [
     sizeUnit: "sq ft",
     location: "Kilimani, Nairobi",
     address: "The Residences, Argwings Kodhek Road, Kilimani",
-    featuredImage: "/properties/apartment-3.jpg",
+    featuredImage: "/uploads/1785139589647-aec9a3b7-d722-4579-955e-ac8899f0b658-rfsample7.jpeg",
     gallery: [
-      "/properties/apartment-3.jpg",
-      "/properties/apartment-3-2.jpg",
-      "/properties/apartment-3-3.jpg",
+      "/uploads/1785139589647-aec9a3b7-d722-4579-955e-ac8899f0b658-rfsample7.jpeg",
+      "/uploads/1788436654872-38e5257f-c82b-42a1-9621-66caccbb59a3-newestt.jpg",
+      "/images/rfarpartment.png",
     ],
     amenities: [
       "Furnished",
@@ -333,12 +334,11 @@ export const properties: Property[] = [
     sizeUnit: "sq ft",
     location: "Nanyuki, Laikipia",
     address: "Ol Pejeta Road, Nanyuki",
-    featuredImage: "/properties/estate-1.jpg",
+    featuredImage: "/images/rfvilla.png",
     gallery: [
-      "/properties/estate-1.jpg",
-      "/properties/estate-1-2.jpg",
-      "/properties/estate-1-3.jpg",
-      "/properties/estate-1-4.jpg",
+      "/images/rfvilla.png",
+      "/uploads/1788433729674-a859a03a-782d-4db8-9b9e-3e5b32325913-newestt.jpg",
+      "/uploads/1785059066136-41d09d57-a93d-4444-8d57-fdb92a7a3fc4-rfh1.jpg",
     ],
     amenities: [
       "5 Acres",
@@ -374,8 +374,11 @@ export const properties: Property[] = [
     sizeUnit: "sq ft",
     location: "Thika Road, Nairobi",
     address: "KM 14, Thika Superhighway",
-    featuredImage: "/properties/land-1.jpg",
-    gallery: ["/properties/land-1.jpg", "/properties/land-1-2.jpg"],
+    featuredImage: "/uploads/1785139391850-f5100c59-3519-4527-9346-1ee5661579ba-rfsampleland.jpg",
+    gallery: [
+      "/uploads/1785139391850-f5100c59-3519-4527-9346-1ee5661579ba-rfsampleland.jpg",
+      "/images/rfland.png",
+    ],
     amenities: [
       "Road Frontage",
       "Utilities Connected",
@@ -389,78 +392,3 @@ export const properties: Property[] = [
     createdAt: "2025-04-20",
   },
 ];
-
-export const propertyCategories: PropertyCategory[] = [
-  {
-    name: "Houses",
-    slug: "house",
-    description: "Family homes, bungalows, and maisonettes",
-    icon: "🏠",
-    count: properties.filter((p) => p.propertyType === "house").length,
-    image: "/images/rfhouses.png",
-  },
-  {
-    name: "Apartments",
-    slug: "apartment",
-    description: "Modern flats, penthouses, and studio apartments",
-    icon: "🏢",
-    count: properties.filter((p) => p.propertyType === "apartment").length,
-    image: "/images/rfarpartment.png",
-  },
-  {
-    name: "Villas",
-    slug: "villa",
-    description: "Luxury villas and country estates",
-    icon: "🏡",
-    count: properties.filter((p) => p.propertyType === "villa").length,
-    image: "/images/rfvilla.png",
-  },
-  {
-    name: "Commercial",
-    slug: "commercial",
-    description: "Office spaces, retail shops, and warehouses",
-    icon: "🏬",
-    count: properties.filter((p) => p.propertyType === "commercial").length,
-    image: "/images/rfcommercial.png",
-  },
-  {
-    name: "Land",
-    slug: "land",
-    description: "Development plots and agricultural land",
-    icon: "🌍",
-    count: properties.filter((p) => p.propertyType === "land").length,
-    image: "/images/rfland.png",
-  },
-  {
-    name: "Townhouses",
-    slug: "townhouse",
-    description: "Modern townhouses in gated communities",
-    icon: "🏘️",
-    count: properties.filter((p) => p.propertyType === "townhouse").length,
-    image: "/images/rftown.png",
-  },
-];
-
-export function getPropertyBySlug(slug: string): Property | undefined {
-  return properties.find((p) => p.slug === slug);
-}
-
-export function getFeaturedProperties(): Property[] {
-  return properties.filter((p) => p.isFeatured);
-}
-
-export function getPropertiesByType(type: string): Property[] {
-  return properties.filter((p) => p.propertyType === type);
-}
-
-export function getPropertiesByStatus(status: string): Property[] {
-  return properties.filter((p) => p.status === status);
-}
-
-export function formatPrice(price: number, currency: string): string {
-  return new Intl.NumberFormat("en-KE", {
-    style: "currency",
-    currency: currency === "KES" ? "KES" : "USD",
-    maximumFractionDigits: 0,
-  }).format(price);
-}

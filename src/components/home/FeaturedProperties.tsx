@@ -42,9 +42,9 @@ export default function FeaturedProperties() {
             marginBottom: "3.5rem",
           }}
         >
-          <span className="section-label">Curated For You</span>
-          <h2 className="section-title">Featured Properties</h2>
-          <p className="section-subtitle" style={{ textAlign: "center" }}>
+          <span data-reveal="fade" className="section-label">Curated For You</span>
+          <h2 data-split className="section-title">Featured Properties</h2>
+          <p data-reveal className="section-subtitle" style={{ textAlign: "center" }}>
             Hand-picked properties that offer exceptional value, prime locations,
             and outstanding quality.
           </p>
@@ -58,26 +58,22 @@ export default function FeaturedProperties() {
             gap: "1.5rem",
           }}
           className="property-grid"
+          data-reveal-stagger="sides"
         >
-          {featured.map((property, index) => (
-            <div
-              key={property.id}
-              className="animate-fade-in-up"
-              style={{ animationDelay: `${index * 100}ms`, opacity: 0, animationFillMode: 'forwards' }}
-            >
-              <PropertyCard property={property} />
-            </div>
+          {featured.map((property) => (
+            <PropertyCard key={property.id} property={property} />
           ))}
         </div>
 
         {/* View all CTA */}
         <div
+          data-reveal
           style={{
             textAlign: "center",
             marginTop: "3rem",
           }}
         >
-          <Link href="/properties" className="btn-secondary">
+          <Link href="/properties" data-magnetic className="btn-secondary">
             View All Properties
             <svg
               width="16"

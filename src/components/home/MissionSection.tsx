@@ -1,6 +1,8 @@
 "use client";
 
+import { useRef } from "react";
 import { companyInfo as staticCompanyInfo } from "@/data/company";
+import { gsap, useGSAP, motionEnabled } from "@/lib/motion";
 
 const iconMap: Record<string, React.ReactNode> = {
   shield: (
@@ -32,18 +34,47 @@ interface MissionSectionProps {
 
 export default function MissionSection({ companyInfo: passedCompanyInfo }: MissionSectionProps = {}) {
   const companyInfo = passedCompanyInfo || staticCompanyInfo;
+  const sectionRef = useRef<HTMLElement>(null);
+  const mediaRef = useRef<HTMLDivElement>(null);
+
+  // The dark background starts as an inset rounded card and opens out to
+  // full width as the section scrolls into view.
+  useGSAP(
+    () => {
+      if (!motionEnabled()) return;
+      gsap.fromTo(
+        mediaRef.current,
+        { clipPath: "inset(7% 5% 7% 5% round 36px)" },
+        {
+          clipPath: "inset(0% 0% 0% 0% round 0px)",
+          ease: "none",
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top bottom",
+            end: "top 15%",
+            scrub: 0.5,
+          },
+        }
+      );
+    },
+    { scope: sectionRef }
+  );
+
   return (
     <section
+      ref={sectionRef}
       style={{
         position: "relative",
         overflow: "hidden",
       }}
     >
-      {/* Background Image */}
+      <div ref={mediaRef} style={{ position: "absolute", inset: 0, zIndex: 0, overflow: "hidden" }}>
+      {/* Background Image (oversized so the parallax drift never shows an edge) */}
       <div
+        data-parallax="12"
         style={{
           position: "absolute",
-          inset: 0,
+          inset: "-15% 0",
           backgroundImage: "url('/images/rfcare1.jpg')",
           backgroundSize: "cover",
           backgroundPosition: "center",
@@ -59,6 +90,7 @@ export default function MissionSection({ companyInfo: passedCompanyInfo }: Missi
           zIndex: 1,
         }}
       />
+      </div>
 
       <div className="container-custom section-padding" style={{ position: "relative", zIndex: 2 }}>
         <div
@@ -73,12 +105,14 @@ export default function MissionSection({ companyInfo: passedCompanyInfo }: Missi
           {/* Text side */}
           <div>
             <span
+              data-reveal="fade"
               className="section-label"
               style={{ color: "#4ade80" }}
             >
               Why We Care
             </span>
             <h2
+              data-split
               style={{
                 fontFamily: "'Outfit', sans-serif",
                 fontSize: "clamp(1.75rem, 4vw, 2.5rem)",
@@ -101,86 +135,24 @@ export default function MissionSection({ companyInfo: passedCompanyInfo }: Missi
               </span>
             </h2>
             <p
+              data-scrub-words
               style={{
-                fontSize: "1.05rem",
-                color: "rgba(214,211,209,0.85)",
-                lineHeight: 1.8,
+                fontSize: "1.25rem",
+                fontWeight: 500,
+                color: "rgba(240,238,236,0.95)",
+                lineHeight: 1.7,
                 marginBottom: "2rem",
                 maxWidth: "520px",
               }}
             >
               {companyInfo.about}
             </p>
-
-            {/* Stats */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(2, 1fr)",
-                gap: "1.25rem",
-              }}
-            >
-              {[
-                {
-                  value: companyInfo.stats.propertiesSold,
-                  label: "Properties Sold",
-                  suffix: "+",
-                },
-                {
-                  value: companyInfo.stats.happyClients,
-                  label: "Happy Clients",
-                  suffix: "+",
-                },
-                {
-                  value: companyInfo.stats.yearsExperience,
-                  label: "Years Experience",
-                  suffix: "+",
-                },
-                {
-                  value: companyInfo.stats.activeListings,
-                  label: "Active Listings",
-                  suffix: "+",
-                },
-              ].map((stat, i) => (
-                <div
-                  key={i}
-                  style={{
-                    padding: "1.25rem",
-                    background: "rgba(255,255,255,0.06)",
-                    backdropFilter: "blur(12px)",
-                    borderRadius: "var(--radius-md)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontFamily: "'Outfit', sans-serif",
-                      fontSize: "1.75rem",
-                      fontWeight: 800,
-                      color: "#4ade80",
-                      lineHeight: 1.2,
-                    }}
-                  >
-                    {stat.value.toLocaleString()}
-                    {stat.suffix}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "0.85rem",
-                      color: "rgba(214,211,209,0.7)",
-                      fontWeight: 500,
-                      marginTop: "0.2rem",
-                    }}
-                  >
-                    {stat.label}
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* Values side */}
           <div
+            data-reveal-stagger="sides"
+            className="mission-values"
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
@@ -190,6 +162,7 @@ export default function MissionSection({ companyInfo: passedCompanyInfo }: Missi
             {companyInfo.values.map((value, i) => (
               <div
                 key={i}
+                className="mission-value-card"
                 style={{
                   padding: "1.75rem",
                   textAlign: "center",
@@ -197,8 +170,10 @@ export default function MissionSection({ companyInfo: passedCompanyInfo }: Missi
                   backdropFilter: "blur(12px)",
                   borderRadius: "var(--radius-lg)",
                   border: "1px solid rgba(255,255,255,0.1)",
-                  transform: i % 2 === 1 ? "translateY(1.5rem)" : "none",
-                  transition: "all 0.3s ease",
+                  // Offset with margin, not transform, so the stagger reveal can animate transform freely.
+                  marginTop: i % 2 === 1 ? "1.5rem" : 0,
+                  marginBottom: i % 2 === 1 ? "-1.5rem" : 0,
+                  transition: "background 0.3s ease, border-color 0.3s ease",
                 }}
               >
                 <div
@@ -243,6 +218,19 @@ export default function MissionSection({ companyInfo: passedCompanyInfo }: Missi
       </div>
 
       <style jsx>{`
+        .mission-grid > :global(*) {
+          min-width: 0;
+        }
+        /* Phones: one card per row, no staggered offset. */
+        @media (max-width: 559px) {
+          .mission-values {
+            grid-template-columns: minmax(0, 1fr) !important;
+          }
+          .mission-value-card {
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+          }
+        }
         @media (min-width: 1024px) {
           .mission-grid {
             grid-template-columns: 1fr 1fr !important;

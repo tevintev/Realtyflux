@@ -2,11 +2,14 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { decrypt } from "@/lib/auth";
 
+const PUBLIC_ADMIN_PATHS = ["/admin/login", "/admin/forgot-password"];
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Protect admin routes (except login page itself)
-  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
+  // Protect admin routes (except the login and password-recovery pages,
+  // which must stay reachable without a session)
+  if (pathname.startsWith("/admin") && !PUBLIC_ADMIN_PATHS.includes(pathname)) {
     const session = request.cookies.get("admin_session")?.value;
 
     if (!session) {

@@ -45,7 +45,7 @@ export interface CompanyInfo {
     facebook?: string;
     instagram?: string;
     twitter?: string;
-    linkedin?: string;
+    tiktok?: string;
     whatsapp?: string;
   };
   stats: {
@@ -98,13 +98,4 @@ export interface Message {
   propertyId?: string;
   createdAt: string;
   isRead: boolean;
-}
-
-export interface PropertyCategory {
-  name: string;
-  slug: PropertyType;
-  description: string;
-  icon: string;
-  count: number;
-  image: string;
 }

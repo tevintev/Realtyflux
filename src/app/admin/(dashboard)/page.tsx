@@ -10,9 +10,16 @@ import {
   TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
+import { dateKey, formatSlot, slotForTime } from "@/lib/booking-slots";
+import BookingsCalendar, { type CalendarBooking } from "@/components/admin/BookingsCalendar";
 
 // Force dynamic rendering to ensure stats are always up to date
 export const dynamic = "force-dynamic";
+
+// The calendar shows everything from three months back onward.
+function calendarWindowStart() {
+  return new Date(Date.now() - 92 * 24 * 60 * 60 * 1000);
+}
 
 export default async function AdminDashboardPage() {
   // Query database in parallel for performance
@@ -25,6 +32,7 @@ export default async function AdminDashboardPage() {
     unreadMessages,
     recentBookings,
     recentMessages,
+    calendarBookings,
   ] = await Promise.all([
     db.property.count(),
     db.property.count({ where: { isFeatured: true } }),
@@ -41,7 +49,29 @@ export default async function AdminDashboardPage() {
       take: 5,
       orderBy: { createdAt: "desc" },
     }),
+    db.booking.findMany({
+      where: {
+        status: { not: "cancelled" },
+        preferredDate: { gte: calendarWindowStart() },
+      },
+      orderBy: { preferredDate: "asc" },
+      include: { property: { select: { title: true, slug: true } } },
+    }),
   ]);
+
+  // The business runs on Nairobi time; use it for "today" on the calendar.
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Nairobi" }).format(new Date());
+  const calendarData: CalendarBooking[] = calendarBookings.map((b) => ({
+    id: b.id,
+    date: dateKey(b.preferredDate),
+    slot: formatSlot(b.preferredTime),
+    slotOrder: slotForTime(b.preferredTime)?.hour ?? b.preferredTime.getUTCHours(),
+    fullName: b.fullName,
+    phone: b.phone,
+    propertyTitle: b.property.title,
+    propertySlug: b.property.slug,
+    status: b.status,
+  }));
 
   const stats = [
     {
@@ -177,6 +207,9 @@ export default async function AdminDashboardPage() {
         })}
       </div>
 
+      {/* Calendar of booked viewing days */}
+      <BookingsCalendar bookings={calendarData} today={today} />
+
       {/* Two-column layout for Bookings & Messages */}
       <div
         style={{
@@ -248,7 +281,7 @@ export default async function AdminDashboardPage() {
                       {booking.fullName}
                     </p>
                     <p style={{ margin: 0, fontSize: "0.82rem", color: "var(--text-secondary)" }}>
-                      {booking.property.title} • {new Date(booking.preferredDate).toLocaleDateString()} at {booking.preferredTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {booking.property.title} • {new Date(booking.preferredDate).toLocaleDateString([], { timeZone: "UTC" })} • {formatSlot(booking.preferredTime)}
                     </p>
                   </div>
                   <span

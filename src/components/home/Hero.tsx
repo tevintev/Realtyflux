@@ -1,7 +1,14 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
+import {
+  gsap,
+  SplitText,
+  useGSAP,
+  motionEnabled,
+  isPageTransitioning,
+} from "@/lib/motion";
 
 interface Particle {
   x: number;
@@ -15,7 +22,12 @@ interface Particle {
 }
 
 export default function Hero() {
-  const [parallaxOffset, setParallaxOffset] = useState({ x: 0, y: 0 });
+  const sectionRef = useRef<HTMLElement>(null);
+  const bgScrollRef = useRef<HTMLDivElement>(null);
+  const bgMouseRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const mouseTo = useRef<{ x: (v: number) => void; y: (v: number) => void } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
   const mouseRef = useRef({ x: -100, y: -100 });
@@ -29,12 +41,69 @@ export default function Hero() {
       const y = e.clientY - rect.top;
       mouseRef.current = { x, y };
 
-      // Subtle parallax offset
-      const offsetX = ((x / rect.width) - 0.5) * 20;
-      const offsetY = ((y / rect.height) - 0.5) * 20;
-      setParallaxOffset({ x: offsetX, y: offsetY });
+      // Subtle parallax offset, eased by GSAP instead of re-rendering
+      mouseTo.current?.x(((x / rect.width) - 0.5) * -24);
+      mouseTo.current?.y(((y / rect.height) - 0.5) * -24);
     },
     []
+  );
+
+  useGSAP(
+    () => {
+      if (!motionEnabled()) return;
+      const heading = headingRef.current!;
+
+      mouseTo.current = {
+        x: gsap.quickTo(bgMouseRef.current, "x", { duration: 1.2, ease: "power3.out" }),
+        y: gsap.quickTo(bgMouseRef.current, "y", { duration: 1.2, ease: "power3.out" }),
+      };
+
+      // Intro: background settles, headline lines rise out of a mask,
+      // then the supporting copy and buttons follow.
+      const split = SplitText.create(heading, {
+        type: "lines",
+        mask: "lines",
+        linesClass: "split-line",
+      });
+      const tl = gsap.timeline({
+        delay: isPageTransitioning() ? 0.6 : 0.15,
+        defaults: { ease: "expo.out" },
+        // Restore the original markup so the heading reflows on resize.
+        onComplete: () => split.revert(),
+      });
+      tl.fromTo(
+        bgMouseRef.current,
+        { scale: 1.3, opacity: 0 },
+        { scale: 1.06, opacity: 1, duration: 2.4 },
+        0
+      )
+        .fromTo(heading, { opacity: 0 }, { opacity: 1, duration: 0.01 }, 0.2)
+        .from(split.lines, { yPercent: 115, duration: 1.4, stagger: 0.14 }, 0.2)
+        .fromTo(
+          ".hero-fade",
+          { opacity: 0, y: 32 },
+          { opacity: 1, y: 0, duration: 1.2, stagger: 0.12 },
+          0.6
+        )
+        .fromTo(".hero-scroll", { opacity: 0 }, { opacity: 1, duration: 1 }, 1.2);
+      sectionRef.current
+        ?.querySelectorAll("[data-intro]")
+        .forEach((el) => el.setAttribute("data-revealed", ""));
+
+      // Scroll-out: background drifts slower than the page, content lifts and fades.
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top top",
+            end: "bottom top",
+            scrub: true,
+          },
+        })
+        .to(bgScrollRef.current, { yPercent: 22, ease: "none" }, 0)
+        .to(contentRef.current, { y: -120, opacity: 0, ease: "none" }, 0);
+    },
+    { scope: sectionRef }
   );
 
   useEffect(() => {
@@ -149,38 +218,46 @@ export default function Hero() {
 
   return (
     <section
+      ref={sectionRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => { mouseRef.current = { x: -100, y: -100 }; }}
       style={{
         position: "relative",
-        minHeight: "100vh",
+        minHeight: "100svh",
         display: "flex",
-        alignItems: "center",
+        // Text sits in the lower half so it doesn't cover the logo in the photo.
+        alignItems: "flex-end",
         justifyContent: "center",
         overflow: "hidden",
+        padding: "6rem 0 6rem",
         backgroundColor: "#0b0f19",
       }}
     >
-      {/* Parallax Background Image */}
+      {/* Parallax Background Image: outer layer follows scroll, inner follows the mouse */}
       <div
-        style={{
-          position: "absolute",
-          inset: "-30px",
-          backgroundImage: "url('/hero-bg.jpg')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          transform: `translate3d(${parallaxOffset.x}px, ${parallaxOffset.y}px, 0) scale(1.05)`,
-          transition: "transform 0.15s cubic-bezier(0.25, 1, 0.5, 1)",
-          zIndex: 0,
-        }}
-      />
+        ref={bgScrollRef}
+        style={{ position: "absolute", inset: 0, zIndex: 0, willChange: "transform" }}
+      >
+        <div
+          ref={bgMouseRef}
+          className="hero-bg"
+          style={{
+            position: "absolute",
+            inset: "-40px",
+            backgroundSize: "cover",
+            backgroundPosition: "center 35%",
+            transform: "scale(1.06)",
+            willChange: "transform",
+          }}
+        />
+      </div>
 
       {/* Dark Overlay to increase text legibility */}
       <div
         style={{
           position: "absolute",
           inset: 0,
-          background: "linear-gradient(to bottom, rgba(11, 15, 25, 0.8) 0%, rgba(11, 15, 25, 0.55) 50%, rgba(11, 15, 25, 0.85) 100%)",
+          background: "linear-gradient(to bottom, rgba(11, 15, 25, 0.6) 0%, rgba(11, 15, 25, 0.4) 50%, rgba(11, 15, 25, 0.75) 100%)",
           zIndex: 1,
         }}
       />
@@ -228,6 +305,7 @@ export default function Hero() {
 
       {/* Content */}
       <div
+        ref={contentRef}
         style={{
           position: "relative",
           zIndex: 10,
@@ -236,46 +314,10 @@ export default function Hero() {
           maxWidth: "900px",
         }}
       >
-        {/* Badge */}
-        <div
-          className="animate-fade-in"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            padding: "0.5rem 1.25rem",
-            background: "rgba(37, 99, 235, 0.15)",
-            borderRadius: "9999px",
-            border: "1px solid rgba(37, 99, 235, 0.25)",
-            marginBottom: "2rem",
-          }}
-        >
-          {/* <span
-            style={{
-              width: "6px",
-              height: "6px",
-              borderRadius: "50%",
-              background: "#22c55e",
-              animation: "pulse-glow 2s ease-in-out infinite",
-            }}
-          />
-          <span
-            style={{
-              fontFamily: "'Outfit', sans-serif",
-              fontSize: "0.8rem",
-              fontWeight: 600,
-              color: "#4ade80",
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-            }}
-          >
-            Kenya&apos;s Trusted Property Partner
-          </span> */}
-        </div>
-
         {/* Main heading */}
         <h1
-          className="animate-fade-in-up"
+          ref={headingRef}
+          data-intro
           style={{
             fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
             fontWeight: 800,
@@ -283,6 +325,7 @@ export default function Hero() {
             lineHeight: 1.1,
             marginBottom: "1.5rem",
             letterSpacing: "-0.03em",
+            filter: "drop-shadow(0 2px 14px rgba(0, 0, 0, 0.55))",
           }}
         >
           Exceptional{" "}
@@ -301,7 +344,8 @@ export default function Hero() {
 
         {/* Subtitle */}
         <p
-          className="animate-fade-in-up animate-delay-200"
+          className="hero-fade"
+          data-intro
           style={{
             fontSize: "clamp(1rem, 2vw, 1.2rem)",
             color: "rgba(214, 211, 209, 0.85)",
@@ -316,7 +360,8 @@ export default function Hero() {
 
         {/* CTA buttons */}
         <div
-          className="animate-fade-in-up animate-delay-300"
+          className="hero-fade"
+          data-intro
           style={{
             display: "flex",
             flexWrap: "wrap",
@@ -327,6 +372,7 @@ export default function Hero() {
         >
           <Link
             href="/properties"
+            data-magnetic
             className="btn-primary"
             style={{
               padding: "1rem 2.25rem",
@@ -348,6 +394,7 @@ export default function Hero() {
           </Link>
           <Link
             href="/contact"
+            data-magnetic
             className="btn-secondary"
             style={{
               padding: "1rem 2.25rem",
@@ -377,57 +424,19 @@ export default function Hero() {
             Contact Us
           </Link>
         </div>
-
-        {/* Stats row */}
-        <div
-          className="animate-fade-in-up animate-delay-500 hero-stats"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(2, 1fr)",
-            gap: "1.5rem",
-            maxWidth: "600px",
-            margin: "0 auto",
-          }}
-        >
-          {[
-            { value: "850+", label: "Properties Sold" },
-            { value: "1,200+", label: "Happy Clients" },
-            { value: "6+", label: "Years Experience" },
-            { value: "100+", label: "Active Listings" },
-          ].map((stat, i) => (
-            <div key={i} style={{ textAlign: "center" }}>
-              <div
-                style={{
-                  fontFamily: "'Outfit', sans-serif",
-                  fontSize: "2rem",
-                  fontWeight: 800,
-                  color: "#22c55e",
-                  lineHeight: 1.2,
-                }}
-              >
-                {stat.value}
-              </div>
-              <div
-                style={{
-                  fontSize: "0.85rem",
-                  color: "rgba(214, 211, 209, 0.75)",
-                  fontWeight: 500,
-                }}
-              >
-                {stat.label}
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Scroll indicator */}
       <div
+        className="hero-scroll"
+        data-intro
         style={{
           position: "absolute",
           bottom: "2rem",
-          left: "50%",
-          transform: "translateX(-50%)",
+          left: 0,
+          right: 0,
+          margin: "0 auto",
+          width: "max-content",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -459,16 +468,6 @@ export default function Hero() {
         </svg>
       </div>
 
-      <style jsx>{`
-        .hero-stats {
-          grid-template-columns: repeat(2, 1fr) !important;
-        }
-        @media (min-width: 640px) {
-          .hero-stats {
-            grid-template-columns: repeat(4, 1fr) !important;
-          }
-        }
-      `}</style>
     </section>
   );
 }

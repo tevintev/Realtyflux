@@ -4,6 +4,7 @@ import { useState } from "react";
 import { updateBookingStatus, deleteBooking } from "@/app/actions/bookings";
 import { Calendar, Phone, Mail, Clock, Search, Trash2, Check, X, RefreshCw } from "lucide-react";
 import Link from "next/link";
+import { dateKey, formatSlot } from "@/lib/booking-slots";
 
 interface Booking {
   id: string;
@@ -62,6 +63,11 @@ export default function BookingsTable({ initialBookings }: BookingsTableProps) {
     }
     setUpdatingId(null);
   };
+
+  // Slots (property + day + time) already held by a confirmed viewing.
+  const slotKey = (b: Booking) =>
+    `${b.propertyId}|${dateKey(new Date(b.preferredDate))}|${formatSlot(new Date(b.preferredTime))}`;
+  const confirmedSlots = new Set(bookings.filter((b) => b.status === "confirmed").map(slotKey));
 
   // Filter & Search
   const filteredBookings = bookings.filter((b) => {
@@ -254,14 +260,12 @@ export default function BookingsTable({ initialBookings }: BookingsTableProps) {
                             year: "numeric",
                             month: "short",
                             day: "numeric",
+                            timeZone: "UTC",
                           })}
                         </span>
                         <span style={{ display: "flex", alignItems: "center", gap: "0.3rem", fontSize: "0.82rem", color: "var(--text-muted)" }}>
                           <Clock size={13} />
-                          {b.preferredTime.toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                          {formatSlot(new Date(b.preferredTime))}
                         </span>
                       </div>
                     </td>
@@ -280,6 +284,20 @@ export default function BookingsTable({ initialBookings }: BookingsTableProps) {
                     {/* Status Badge */}
                     <td style={{ padding: "1.25rem 1.5rem" }}>
                       <span className={`badge badge-${b.status}`}>{b.status}</span>
+                      {b.status === "pending" && confirmedSlots.has(slotKey(b)) && (
+                        <span
+                          title="Another viewing is already confirmed for this property at this time. Reschedule or cancel this request."
+                          style={{
+                            display: "block",
+                            marginTop: "0.4rem",
+                            fontSize: "0.72rem",
+                            fontWeight: 600,
+                            color: "#dc2626",
+                          }}
+                        >
+                          Slot already taken
+                        </span>
+                      )}
                     </td>
 
                     {/* Actions */}

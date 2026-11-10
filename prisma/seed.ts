@@ -29,13 +29,30 @@ async function main() {
       facebookUrl: companyInfo.socialLinks.facebook || "",
       instagramUrl: companyInfo.socialLinks.instagram || "",
       twitterUrl: companyInfo.socialLinks.twitter || "",
-      linkedinUrl: companyInfo.socialLinks.linkedin || "",
+      tiktokUrl: companyInfo.socialLinks.tiktok || "",
     }
   });
 
   // Seed Properties
   console.log("Seeding properties...");
+  // The demo data only has agent names (strings); look each one up or
+  // create it once so properties can link to a real Agent record.
+  const agentIdByName = new Map<string, string>();
+  async function resolveAgentId(name: string | undefined) {
+    if (!name) return null;
+    const cached = agentIdByName.get(name);
+    if (cached) return cached;
+
+    // Agent.name has no unique constraint, so find-or-create explicitly
+    // rather than upsert (which needs a unique `where`).
+    const existing = await prisma.agent.findFirst({ where: { name } });
+    const agent = existing || (await prisma.agent.create({ data: { name } }));
+    agentIdByName.set(name, agent.id);
+    return agent.id;
+  }
+
   for (const item of properties) {
+    const agentId = await resolveAgentId(item.agent);
     const createdProperty = await prisma.property.create({
       data: {
         title: item.title,
@@ -57,7 +74,7 @@ async function main() {
         amenities: item.amenities,
         yearBuilt: item.yearBuilt || null,
         isFeatured: item.isFeatured || false,
-        agent: item.agent || null,
+        agentId,
       }
     });
 
@@ -79,18 +96,22 @@ async function main() {
     }
   }
 
-  // Seed Admin User with verified bcrypt hash
+  // Seed Admin User (only on first run — re-seeding must not clobber a
+  // password that was changed later via `npm run reset-admin-password`)
   console.log("Seeding admin user...");
-  const hashedAdminPassword = "$2b$10$ZIF/3w06klPC1R0VP9105.q157P9juyuy9kr7NCLXNG55q9Olf.uS";
-  await prisma.adminUser.upsert({
-    where: { username: "admin" },
-    update: { password: hashedAdminPassword, name: "Administrator" },
-    create: {
-      username: "admin",
-      password: hashedAdminPassword,
-      name: "Administrator",
-    },
-  });
+  const existingAdmin = await prisma.adminUser.findUnique({ where: { username: "admin" } });
+  if (existingAdmin) {
+    console.log("  Admin user already exists, leaving password untouched.");
+  } else {
+    const hashedAdminPassword = "$2b$10$ZIF/3w06klPC1R0VP9105.q157P9juyuy9kr7NCLXNG55q9Olf.uS";
+    await prisma.adminUser.create({
+      data: {
+        username: "admin",
+        password: hashedAdminPassword,
+        name: "Administrator",
+      },
+    });
+  }
 
   console.log("Seeding completed successfully!");
 }

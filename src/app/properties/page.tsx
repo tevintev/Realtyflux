@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { properties, formatPrice } from "@/data/properties";
+import { formatPrice } from "@/lib/format";
 import PropertyCard from "@/components/properties/PropertyCard";
 
 function PropertiesListContent() {
@@ -166,6 +166,7 @@ function PropertiesListContent() {
       >
         <div className="container-custom">
           <span
+            data-reveal="fade"
             style={{
               fontFamily: "'Outfit', sans-serif",
               fontSize: "0.85rem",
@@ -178,6 +179,7 @@ function PropertiesListContent() {
             Explore Our Portfolio
           </span>
           <h1
+            data-split
             style={{
               fontFamily: "'Outfit', sans-serif",
               fontSize: "2.75rem",
@@ -189,6 +191,8 @@ function PropertiesListContent() {
             Available Properties
           </h1>
           <p
+            data-reveal
+            data-reveal-delay="0.15"
             style={{
               maxWidth: "600px",
               margin: "0 auto",
@@ -428,6 +432,7 @@ function PropertiesListContent() {
                   gap: "1.5rem",
                 }}
                 className="properties-grid"
+                data-reveal-stagger
               >
                 {sortedProperties.map((property) => (
                   <PropertyCard key={property.id} property={property} />

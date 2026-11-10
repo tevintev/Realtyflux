@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
+import { isOptimizable } from "@/lib/image-path";
 import { companyInfo as staticCompanyInfo } from "@/data/company";
 
 interface CTASectionProps {
@@ -48,9 +50,10 @@ export default function CTASection({ companyInfo: passedCompanyInfo }: CTASectio
 
       {/* Grid pattern */}
       <div
+        data-parallax="20"
         style={{
           position: "absolute",
-          inset: 0,
+          inset: "-30% 0",
           backgroundImage: `linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
             linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)`,
           backgroundSize: "40px 40px",
@@ -67,6 +70,7 @@ export default function CTASection({ companyInfo: passedCompanyInfo }: CTASectio
       >
         {/* Logo / Brand badge */}
         <div
+          data-reveal="scale"
           style={{
             width: "84px",
             height: "84px",
@@ -84,9 +88,12 @@ export default function CTASection({ companyInfo: passedCompanyInfo }: CTASectio
           }}
         >
           {logo ? (
-            <img
+            <Image
               src={logo}
               alt={`${companyInfo.name} Logo`}
+              width={112}
+              height={112}
+              unoptimized={!isOptimizable(logo)}
               style={{
                 width: "100%",
                 height: "100%",
@@ -105,6 +112,7 @@ export default function CTASection({ companyInfo: passedCompanyInfo }: CTASectio
         </div>
 
         <h2
+          data-split
           style={{
             fontFamily: "'Outfit', sans-serif",
             fontSize: "clamp(1.75rem, 4vw, 3rem)",
@@ -121,6 +129,7 @@ export default function CTASection({ companyInfo: passedCompanyInfo }: CTASectio
         </h2>
 
         <p
+          data-reveal
           style={{
             fontSize: "1.1rem",
             color: "rgba(255,255,255,0.7)",
@@ -134,6 +143,8 @@ export default function CTASection({ companyInfo: passedCompanyInfo }: CTASectio
         </p>
 
         <div
+          data-reveal
+          data-reveal-delay="0.15"
           style={{
             display: "flex",
             flexWrap: "wrap",
@@ -143,6 +154,7 @@ export default function CTASection({ companyInfo: passedCompanyInfo }: CTASectio
         >
           <Link
             href="/properties"
+            data-magnetic
             className="btn-gold"
             style={{ padding: "1rem 2.5rem", fontSize: "1rem" }}
           >
@@ -163,6 +175,7 @@ export default function CTASection({ companyInfo: passedCompanyInfo }: CTASectio
           </Link>
           <Link
             href="/contact"
+            data-magnetic
             className="btn-secondary"
             style={{
               padding: "1rem 2.5rem",

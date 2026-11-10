@@ -1,0 +1,25 @@
+services:
+  realty-flux:
+    build:
+      context: .
+      # Build reads the live database for static pages, so use the host network.
+      network: host
+      secrets:
+        - envfile
+    image: realty-flux:latest
+    container_name: realty-flux
+    restart: unless-stopped
+    # .env.docker is .env with DATABASE_URL pointed at the host (see below).
+    env_file: .env.docker
+    # Same uid as the host's telvin user so ./uploads stays writable.
+    user: "1002:1002"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "3002:3000"
+    volumes:
+      - ./uploads:/app/uploads
+
+secrets:
+  envfile:
+    file: ./.env

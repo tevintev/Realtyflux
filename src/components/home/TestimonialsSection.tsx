@@ -1,11 +1,49 @@
 "use client";
 
 import { testimonials } from "@/data/testimonials";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { gsap, useGSAP, motionEnabled } from "@/lib/motion";
+
+const AUTOPLAY_MS = 7000;
 
 export default function TestimonialsSection() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const lastAnimatedIndex = useRef(activeIndex);
   const visibleTestimonials = testimonials.slice(0, 6);
+
+  useEffect(() => {
+    if (paused) return;
+    const id = setTimeout(
+      () => setActiveIndex((i) => (i + 1) % visibleTestimonials.length),
+      AUTOPLAY_MS
+    );
+    return () => clearTimeout(id);
+  }, [activeIndex, paused, visibleTestimonials.length]);
+
+  // Crossfade each new quote in: words lift slightly out of a soft blur.
+  useGSAP(
+    () => {
+      if (lastAnimatedIndex.current === activeIndex) return;
+      lastAnimatedIndex.current = activeIndex;
+      if (!motionEnabled()) return;
+      gsap.fromTo(
+        bodyRef.current!.children,
+        { opacity: 0, y: 24, filter: "blur(6px)" },
+        {
+          opacity: 1,
+          y: 0,
+          filter: "blur(0px)",
+          duration: 0.9,
+          ease: "expo.out",
+          stagger: 0.07,
+          clearProps: "filter,transform",
+        }
+      );
+    },
+    { dependencies: [activeIndex] }
+  );
 
   return (
     <section
@@ -25,9 +63,9 @@ export default function TestimonialsSection() {
             marginBottom: "3.5rem",
           }}
         >
-          <span className="section-label">Client Stories</span>
-          <h2 className="section-title">What Our Clients Say</h2>
-          <p className="section-subtitle" style={{ textAlign: "center" }}>
+          <span data-reveal="fade" className="section-label">Client Stories</span>
+          <h2 data-split className="section-title">What Our Clients Say</h2>
+          <p data-reveal className="section-subtitle" style={{ textAlign: "center" }}>
             Real stories from real people who found their perfect property with
             Realty Flux.
           </p>
@@ -35,6 +73,9 @@ export default function TestimonialsSection() {
 
         {/* Featured testimonial */}
         <div
+          data-reveal
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
           style={{
             maxWidth: "800px",
             margin: "0 auto 3rem",
@@ -56,6 +97,7 @@ export default function TestimonialsSection() {
             &ldquo;
           </div>
 
+          <div ref={bodyRef}>
           <p
             style={{
               fontSize: "1.15rem",
@@ -63,7 +105,6 @@ export default function TestimonialsSection() {
               lineHeight: 1.8,
               fontStyle: "italic",
               marginBottom: "1.5rem",
-              transition: "opacity 0.3s ease",
             }}
           >
             {visibleTestimonials[activeIndex].content}
@@ -118,6 +159,7 @@ export default function TestimonialsSection() {
                 ` • ${visibleTestimonials[activeIndex].propertyType}`}
             </div>
           </div>
+          </div>
         </div>
 
         {/* Navigation dots */}
@@ -143,7 +185,7 @@ export default function TestimonialsSection() {
                     ? "var(--accent-primary)"
                     : "var(--color-stone-300)",
                 cursor: "pointer",
-                transition: "all 0.3s ease",
+                transition: "width 0.5s cubic-bezier(0.2, 0.7, 0.2, 1), background 0.3s ease",
                 padding: 0,
               }}
             />

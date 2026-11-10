@@ -3,7 +3,7 @@
 import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { formatPrice } from "@/data/properties";
+import { formatPrice } from "@/lib/format";
 import PropertyGallery from "@/components/properties/PropertyGallery";
 import PropertyInquiryForm from "@/components/properties/PropertyInquiryForm";
 import PropertyCard from "@/components/properties/PropertyCard";
@@ -125,7 +125,7 @@ export default function PropertyDetailPage({ params }: PageProps) {
               gap: "1.5rem",
             }}
           >
-            <div>
+            <div data-reveal>
               {/* Badges */}
               <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
                 <span className={`badge ${statusInfo.className}`}>{statusInfo.label}</span>
@@ -161,6 +161,8 @@ export default function PropertyDetailPage({ params }: PageProps) {
 
             {/* Price Box */}
             <div
+              data-reveal="right"
+              data-reveal-delay="0.15"
               style={{
                 background: "rgba(255, 255, 255, 0.1)",
                 backdropFilter: "blur(10px)",
@@ -222,6 +224,7 @@ export default function PropertyDetailPage({ params }: PageProps) {
                 gap: "1.5rem",
               }}
               className="specs-grid"
+              data-reveal-stagger
             >
               <div>
                 <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>Type</span>
@@ -268,7 +271,7 @@ export default function PropertyDetailPage({ params }: PageProps) {
             </div>
 
             {/* Description */}
-            <div style={{ marginBottom: "2rem" }}>
+            <div data-reveal style={{ marginBottom: "2rem" }}>
               <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.5rem", fontWeight: 700, marginBottom: "1rem" }}>
                 Property Description
               </h2>
@@ -290,6 +293,7 @@ export default function PropertyDetailPage({ params }: PageProps) {
                     gap: "1rem",
                   }}
                   className="amenities-grid"
+                  data-reveal-stagger
                 >
                   {property.amenities.map((amenity) => (
                     <div
@@ -315,7 +319,7 @@ export default function PropertyDetailPage({ params }: PageProps) {
           </div>
 
           {/* Right Column: Inquiries & Actions Panel */}
-          <aside style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+          <aside data-reveal="right" style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
             {/* Booking Viewing Action Card */}
             <div
               style={{
@@ -396,8 +400,8 @@ export default function PropertyDetailPage({ params }: PageProps) {
         {relatedProperties.length > 0 && (
           <div style={{ marginTop: "5rem", borderTop: "1px solid var(--color-stone-200)", paddingTop: "4rem" }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", marginBottom: "3rem" }}>
-              <span className="section-label">Similar Listings</span>
-              <h2 className="section-title">Related Properties</h2>
+              <span data-reveal="fade" className="section-label">Similar Listings</span>
+              <h2 data-split className="section-title">Related Properties</h2>
             </div>
             <div
               style={{
@@ -406,6 +410,7 @@ export default function PropertyDetailPage({ params }: PageProps) {
                 gap: "1.5rem",
               }}
               className="related-grid"
+              data-reveal-stagger
             >
               {relatedProperties.map((p) => (
                 <PropertyCard key={p.id} property={p} />

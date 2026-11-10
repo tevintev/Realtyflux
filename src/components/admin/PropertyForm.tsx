@@ -91,9 +91,10 @@ interface PropertyFormProps {
     amenities: string[];
     yearBuilt: number | null;
     isFeatured: boolean;
-    agent: string | null;
+    agentId: string | null;
     images?: PropertyImage[];
   };
+  agents?: { id: string; name: string }[];
 }
 
 interface UploadState {
@@ -275,7 +276,7 @@ function MediaUploadCard({
   );
 }
 
-export default function PropertyForm({ initialData }: PropertyFormProps) {
+export default function PropertyForm({ initialData, agents = [] }: PropertyFormProps) {
   const router = useRouter();
   const coverInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -307,7 +308,7 @@ export default function PropertyForm({ initialData }: PropertyFormProps) {
   const [featuredImage, setFeaturedImage] = useState(initialData?.featuredImage || "");
   const [yearBuilt, setYearBuilt] = useState<number | "">(initialData?.yearBuilt ?? "");
   const [isFeatured, setIsFeatured] = useState(initialData?.isFeatured || false);
-  const [agent, setAgent] = useState(initialData?.agent || "");
+  const [agentId, setAgentId] = useState(initialData?.agentId || "");
   const [galleryImages, setGalleryImages] = useState<string[]>(
     initialData?.images?.map((img) => img.imageUrl) || []
   );
@@ -436,7 +437,7 @@ export default function PropertyForm({ initialData }: PropertyFormProps) {
       amenities: selectedAmenities,
       yearBuilt: yearBuilt === "" ? null : Number(yearBuilt),
       isFeatured,
-      agent: agent || undefined,
+      agentId: agentId || undefined,
       gallery: galleryImages,
     };
 
@@ -826,15 +827,30 @@ export default function PropertyForm({ initialData }: PropertyFormProps) {
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "1.25rem" }}>
             <div>
-              <label className="input-label" htmlFor="agent">Assign Agent Name</label>
-              <input
+              <label className="input-label" htmlFor="agent">Assign Agent</label>
+              <select
                 id="agent"
-                type="text"
                 className="input-field"
-                placeholder="e.g. Amara Osei"
-                value={agent}
-                onChange={(event) => setAgent(event.target.value)}
-              />
+                style={{ appearance: "auto" }}
+                value={agentId}
+                onChange={(event) => setAgentId(event.target.value)}
+              >
+                <option value="">No agent assigned</option>
+                {agents.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+              {agents.length === 0 && (
+                <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginTop: "0.4rem" }}>
+                  No agents yet —{" "}
+                  <Link href="/admin/agents/new" style={{ color: "#16a34a" }}>
+                    add one
+                  </Link>{" "}
+                  to assign them to listings.
+                </p>
+              )}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.5rem" }}>
               <input

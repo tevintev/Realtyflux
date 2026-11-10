@@ -15,7 +15,7 @@ export interface CompanySettingsInput {
   facebookUrl?: string;
   instagramUrl?: string;
   twitterUrl?: string;
-  linkedinUrl?: string;
+  tiktokUrl?: string;
 }
 
 /**
@@ -52,6 +52,16 @@ export async function getCompanySettings() {
   }
 }
 
+// wa.me needs the number in international format, digits only. Kenyan numbers
+// typed locally ("0796 821 718" or "796821718") are given the 254 country code.
+function whatsappLink(phone?: string | null): string | undefined {
+  let digits = (phone || "").replace(/\D/g, "");
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  else if (digits.startsWith("0")) digits = `254${digits.slice(1)}`;
+  else if (digits.length === 9 && /^[17]/.test(digits)) digits = `254${digits}`;
+  return digits.length >= 11 ? `https://wa.me/${digits}` : undefined;
+}
+
 /**
  * Get merged company settings, falling back to static settings where db settings are missing.
  */
@@ -73,7 +83,9 @@ export async function getMergedCompanyInfo() {
       facebook: dbSettings.facebookUrl || staticCompanyInfo.socialLinks.facebook,
       instagram: dbSettings.instagramUrl || staticCompanyInfo.socialLinks.instagram,
       twitter: dbSettings.twitterUrl || staticCompanyInfo.socialLinks.twitter,
-      linkedin: dbSettings.linkedinUrl || staticCompanyInfo.socialLinks.linkedin,
+      tiktok: dbSettings.tiktokUrl || staticCompanyInfo.socialLinks.tiktok,
+      // Chat opens on the same number as the phone set in Settings.
+      whatsapp: whatsappLink(dbSettings.phone) || staticCompanyInfo.socialLinks.whatsapp,
     }
   };
 }
@@ -101,7 +113,7 @@ export async function updateCompanySettings(data: CompanySettingsInput) {
           facebookUrl: data.facebookUrl || null,
           instagramUrl: data.instagramUrl || null,
           twitterUrl: data.twitterUrl || null,
-          linkedinUrl: data.linkedinUrl || null,
+          tiktokUrl: data.tiktokUrl || null,
           updatedAt: new Date(),
         },
       });
@@ -118,7 +130,7 @@ export async function updateCompanySettings(data: CompanySettingsInput) {
           facebookUrl: data.facebookUrl || null,
           instagramUrl: data.instagramUrl || null,
           twitterUrl: data.twitterUrl || null,
-          linkedinUrl: data.linkedinUrl || null,
+          tiktokUrl: data.tiktokUrl || null,
         },
       });
     }

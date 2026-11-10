@@ -28,7 +28,7 @@ interface CompanySettingsData {
   facebookUrl: string | null;
   instagramUrl: string | null;
   twitterUrl: string | null;
-  linkedinUrl: string | null;
+  tiktokUrl: string | null;
 }
 
 function uploadLogoFile(file: File, onProgress: (p: number) => void) {
@@ -64,7 +64,7 @@ export default function CompanySettingsForm({ settings }: { settings: CompanySet
   const [facebookUrl, setFacebookUrl] = useState(settings.facebookUrl || "");
   const [instagramUrl, setInstagramUrl] = useState(settings.instagramUrl || "");
   const [twitterUrl, setTwitterUrl] = useState(settings.twitterUrl || "");
-  const [linkedinUrl, setLinkedinUrl] = useState(settings.linkedinUrl || "");
+  const [tiktokUrl, setTiktokUrl] = useState(settings.tiktokUrl || "");
   const [logoUrl, setLogoUrl] = useState(settings.logo || "");
 
   const [saving, setSaving] = useState(false);
@@ -109,7 +109,7 @@ export default function CompanySettingsForm({ settings }: { settings: CompanySet
       facebookUrl: facebookUrl || undefined,
       instagramUrl: instagramUrl || undefined,
       twitterUrl: twitterUrl || undefined,
-      linkedinUrl: linkedinUrl || undefined,
+      tiktokUrl: tiktokUrl || undefined,
     };
 
     const res = await updateCompanySettings(payload);
@@ -340,13 +340,13 @@ export default function CompanySettingsForm({ settings }: { settings: CompanySet
             <input id="twitter" type="url" className="input-field" placeholder="https://twitter.com/yourhandle" value={twitterUrl} onChange={(e) => setTwitterUrl(e.target.value)} />
           </div>
           <div>
-            <label className="input-label" htmlFor="linkedin">
+            <label className="input-label" htmlFor="tiktok">
               <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
-                <LinkIcon size={13} style={{ color: "#0a66c2" }} />
-                <span style={{ color: "#0a66c2" }}>LinkedIn</span>
+                <LinkIcon size={13} style={{ color: "#111111" }} />
+                <span style={{ color: "#111111" }}>TikTok</span>
               </span>
             </label>
-            <input id="linkedin" type="url" className="input-field" placeholder="https://linkedin.com/company/yourcompany" value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} />
+            <input id="tiktok" type="url" className="input-field" placeholder="https://tiktok.com/@yourhandle" value={tiktokUrl} onChange={(e) => setTiktokUrl(e.target.value)} />
           </div>
         </div>
       </div>

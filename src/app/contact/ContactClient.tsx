@@ -56,6 +56,7 @@ export default function ContactClient({ companyInfo }: ContactClientProps) {
       >
         <div className="container-custom">
           <span
+            data-reveal="fade"
             style={{
               fontFamily: "'Outfit', sans-serif",
               fontSize: "0.85rem",
@@ -68,6 +69,7 @@ export default function ContactClient({ companyInfo }: ContactClientProps) {
             Get in touch
           </span>
           <h1
+            data-split
             style={{
               fontFamily: "'Outfit', sans-serif",
               fontSize: "2.75rem",
@@ -79,6 +81,8 @@ export default function ContactClient({ companyInfo }: ContactClientProps) {
             Contact {companyInfo.name}
           </h1>
           <p
+            data-reveal
+            data-reveal-delay="0.15"
             style={{
               maxWidth: "600px",
               margin: "0 auto",
@@ -104,172 +108,52 @@ export default function ContactClient({ companyInfo }: ContactClientProps) {
         >
           {/* Left Side: Contact Information Cards */}
           <div>
-            <span className="section-label">Find Us</span>
-            <h2 className="section-title" style={{ marginBottom: "0.75rem" }}>
+            <span data-reveal="fade" className="section-label">Find Us</span>
+            <h2 data-split className="section-title" style={{ marginBottom: "0.75rem" }}>
               Our Office &amp; Support Details
             </h2>
-            <p style={{ color: "var(--text-secondary)", fontSize: "1rem", lineHeight: 1.7, marginBottom: "2.5rem", maxWidth: "420px" }}>
+            <p data-reveal style={{ color: "var(--text-secondary)", fontSize: "1rem", lineHeight: 1.7, marginBottom: "2.5rem", maxWidth: "420px" }}>
               We&apos;re here to help. Reach us through any of the channels below and our team will respond promptly.
             </p>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr",
-                gap: "1.25rem",
-                marginBottom: "2.5rem",
-              }}
-              className="info-cards"
-            >
-              {/* Address card */}
-              <div
-                className="contact-info-card"
-                style={{
-                  background: "#fff",
-                  border: "1px solid rgba(22,163,74,0.12)",
-                  borderRadius: "var(--radius-xl)",
-                  padding: "1.5rem",
-                  display: "flex",
-                  gap: "1.25rem",
-                  alignItems: "center",
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
-                  transition: "all 0.3s ease",
-                  position: "relative",
-                  overflow: "hidden",
-                }}
-              >
-                <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: "3px", background: "linear-gradient(180deg, #14532d, #22c55e)", borderRadius: "3px 0 0 3px" }} />
-                <div
-                  style={{
-                    flexShrink: 0,
-                    width: "52px",
-                    height: "52px",
-                    borderRadius: "14px",
-                    background: "linear-gradient(135deg, #14532d, #16a34a)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#fff",
-                    boxShadow: "0 6px 16px rgba(22,163,74,0.25)",
-                  }}
-                >
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <div className="info-list" data-reveal-stagger>
+              <div className="info-row">
+                <span className="info-row__icon" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
                     <circle cx="12" cy="10" r="3" />
                   </svg>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, margin: "0 0 0.25rem", fontSize: "1rem" }}>
-                    Physical Address
-                  </p>
-                  <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", margin: 0, lineHeight: 1.5 }}>
-                    {companyInfo.address}
-                  </p>
+                </span>
+                <div>
+                  <p className="info-row__label">Visit us</p>
+                  <p className="info-row__value">{companyInfo.address}</p>
                 </div>
               </div>
 
-              {/* Call Card */}
-              <div
-                className="contact-info-card"
-                style={{
-                  background: "#fff",
-                  border: "1px solid rgba(59,130,246,0.12)",
-                  borderRadius: "var(--radius-xl)",
-                  padding: "1.5rem",
-                  display: "flex",
-                  gap: "1.25rem",
-                  alignItems: "center",
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
-                  transition: "all 0.3s ease",
-                  position: "relative",
-                  overflow: "hidden",
-                }}
-              >
-                <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: "3px", background: "linear-gradient(180deg, #1d4ed8, #3b82f6)", borderRadius: "3px 0 0 3px" }} />
-                <div
-                  style={{
-                    flexShrink: 0,
-                    width: "52px",
-                    height: "52px",
-                    borderRadius: "14px",
-                    background: "linear-gradient(135deg, #1d4ed8, #3b82f6)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#fff",
-                    boxShadow: "0 6px 16px rgba(59,130,246,0.25)",
-                  }}
-                >
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <div className="info-row">
+                <span className="info-row__icon" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.89 10.65 19.79 19.79 0 01.82 2a2 2 0 012-2.18h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L7.09 7.91a16 16 0 006 6l.98-.98a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />
                   </svg>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, margin: "0 0 0.25rem", fontSize: "1rem" }}>
-                    Phone Lines
-                  </p>
-                  <a
-                    href={`tel:${companyInfo.phone}`}
-                    style={{ color: "var(--text-primary)", fontSize: "0.95rem", textDecoration: "none", fontWeight: 700, display: "block" }}
-                  >
-                    {companyInfo.phone}
-                  </a>
-                  <p style={{ color: "var(--text-secondary)", fontSize: "0.82rem", margin: "0.2rem 0 0", lineHeight: 1.4 }}>
-                    {companyInfo.workingHours}
-                  </p>
+                </span>
+                <div>
+                  <p className="info-row__label">Call us</p>
+                  <a className="info-row__value" href={`tel:${companyInfo.phone}`}>{companyInfo.phone}</a>
+                  <p className="info-row__note">{companyInfo.workingHours}</p>
                 </div>
               </div>
 
-              {/* Email Card */}
-              <div
-                className="contact-info-card"
-                style={{
-                  background: "#fff",
-                  border: "1px solid rgba(245,158,11,0.12)",
-                  borderRadius: "var(--radius-xl)",
-                  padding: "1.5rem",
-                  display: "flex",
-                  gap: "1.25rem",
-                  alignItems: "center",
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
-                  transition: "all 0.3s ease",
-                  position: "relative",
-                  overflow: "hidden",
-                }}
-              >
-                <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: "3px", background: "linear-gradient(180deg, #b45309, #f59e0b)", borderRadius: "3px 0 0 3px" }} />
-                <div
-                  style={{
-                    flexShrink: 0,
-                    width: "52px",
-                    height: "52px",
-                    borderRadius: "14px",
-                    background: "linear-gradient(135deg, #b45309, #f59e0b)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#fff",
-                    boxShadow: "0 6px 16px rgba(245,158,11,0.25)",
-                  }}
-                >
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <div className="info-row">
+                <span className="info-row__icon" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                     <polyline points="22,6 12,13 2,6" />
                   </svg>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, margin: "0 0 0.25rem", fontSize: "1rem" }}>
-                    Email Support
-                  </p>
-                  <a
-                    href={`mailto:${companyInfo.email}`}
-                    style={{ color: "var(--accent-primary)", fontSize: "0.95rem", textDecoration: "none", fontWeight: 700, display: "block" }}
-                  >
-                    {companyInfo.email}
-                  </a>
-                  <p style={{ color: "var(--text-secondary)", fontSize: "0.82rem", margin: "0.2rem 0 0" }}>
-                    We respond within 24 hours
-                  </p>
+                </span>
+                <div>
+                  <p className="info-row__label">Email us</p>
+                  <a className="info-row__value" href={`mailto:${companyInfo.email}`}>{companyInfo.email}</a>
+                  <p className="info-row__note">We respond within 24 hours</p>
                 </div>
               </div>
             </div>
@@ -282,12 +166,11 @@ export default function ContactClient({ companyInfo }: ContactClientProps) {
                 rel="noopener noreferrer"
                 className="btn-gold"
                 style={{
-                  background: "linear-gradient(135deg, #128C7E, #25D366)",
+                  background: "#14532d",
                   color: "#fff",
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "0.6rem",
-                  boxShadow: "0 6px 20px rgba(37, 211, 102, 0.35)",
                   padding: "0.9rem 1.75rem",
                   borderRadius: "var(--radius-full)",
                 }}
@@ -317,6 +200,7 @@ export default function ContactClient({ companyInfo }: ContactClientProps) {
 
           {/* Right Side: Message Submission Form */}
           <div
+            data-reveal="right"
             style={{
               background: "#fff",
               border: "1px solid var(--color-stone-200)",
@@ -547,23 +431,71 @@ export default function ContactClient({ companyInfo }: ContactClientProps) {
 
       <style jsx global>{`
         .contact-layout {
-          grid-template-columns: 1fr !important;
+          grid-template-columns: minmax(0, 1fr) !important;
         }
-        .info-cards {
-          grid-template-columns: 1fr !important;
+        .contact-layout > * {
+          min-width: 0;
         }
-        .contact-info-card:hover {
-          transform: translateY(-3px);
-          box-shadow: 0 8px 24px rgba(0,0,0,0.08) !important;
+        .info-list {
+          margin-bottom: 2.5rem;
+          border-top: 1px solid var(--color-stone-300);
         }
-        @media (min-width: 640px) {
-          .info-cards {
-            grid-template-columns: 1fr !important;
-          }
+        .info-row {
+          display: flex;
+          align-items: flex-start;
+          gap: 1.25rem;
+          padding: 1.5rem 0;
+          border-bottom: 1px solid var(--color-stone-300);
+        }
+        .info-row__icon {
+          flex-shrink: 0;
+          width: 44px;
+          height: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid var(--color-stone-300);
+          border-radius: 50%;
+          color: #14532d;
+          transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+        .info-row:hover .info-row__icon {
+          background: #14532d;
+          border-color: #14532d;
+          color: #fff;
+        }
+        .info-row__label {
+          margin: 0 0 0.35rem;
+          font-family: "Outfit", sans-serif;
+          font-size: 0.72rem;
+          font-weight: 600;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: var(--color-stone-500);
+        }
+        .info-row__value {
+          display: block;
+          margin: 0;
+          font-family: "Outfit", sans-serif;
+          font-size: 1.1rem;
+          font-weight: 500;
+          line-height: 1.5;
+          color: var(--text-primary);
+          text-decoration: none;
+          overflow-wrap: anywhere;
+        }
+        a.info-row__value:hover {
+          color: #15803d;
+        }
+        .info-row__note {
+          margin: 0.3rem 0 0;
+          font-size: 0.85rem;
+          line-height: 1.5;
+          color: var(--text-secondary);
         }
         @media (min-width: 1024px) {
           .contact-layout {
-            grid-template-columns: 1.1fr 1fr !important;
+            grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) !important;
           }
         }
       `}</style>

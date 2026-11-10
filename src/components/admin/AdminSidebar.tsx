@@ -10,6 +10,7 @@ import {
   Mail,
   LogOut,
   User,
+  Users,
   ChevronLeft,
   Menu,
   Settings,
@@ -35,6 +36,7 @@ export default function AdminSidebar({
     { label: "Properties", href: "/admin/properties", icon: Building },
     { label: "Bookings", href: "/admin/bookings", icon: Calendar },
     { label: "Messages", href: "/admin/messages", icon: Mail },
+    { label: "Agents", href: "/admin/agents", icon: Users },
     { label: "Settings", href: "/admin/settings", icon: Settings },
   ];
 

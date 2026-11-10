@@ -3,9 +3,10 @@
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { formatPrice } from "@/data/properties";
+import { formatPrice } from "@/lib/format";
 import { Property } from "@/types/property";
-import { createBooking } from "@/app/actions/bookings";
+import { createBooking, getBookedSlots } from "@/app/actions/bookings";
+import { TIME_SLOTS } from "@/lib/booking-slots";
 
 interface PageProps {
   params: Promise<{ propertyId: string }>;
@@ -25,6 +26,24 @@ export default function BookViewingPage({ params }: PageProps) {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [checkingSlots, setCheckingSlots] = useState(false);
+
+  // Load which slots are already confirmed for this property on the chosen day.
+  useEffect(() => {
+    if (!preferredDate) return;
+    let cancelled = false;
+    getBookedSlots(propertyId, preferredDate).then((slots) => {
+      if (cancelled) return;
+      setBookedSlots(slots);
+      setCheckingSlots(false);
+      // Drop a selection that just became unavailable.
+      setPreferredTime((current) => (slots.includes(current) ? "" : current));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [propertyId, preferredDate]);
 
   // Sync state with matching property in DB
   useEffect(() => {
@@ -47,6 +66,10 @@ export default function BookViewingPage({ params }: PageProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!preferredTime) {
+      setError("Please choose a time slot.");
+      return;
+    }
     setLoading(true);
     setError("");
 
@@ -65,6 +88,11 @@ export default function BookViewingPage({ params }: PageProps) {
       setSubmitted(true);
     } else {
       setError(res.error || "Failed to submit viewing request.");
+      if ("slotTaken" in res && res.slotTaken) {
+        // Someone else got there first: refresh availability and clear the pick.
+        setPreferredTime("");
+        setBookedSlots(await getBookedSlots(propertyId, preferredDate));
+      }
     }
   };
 
@@ -113,6 +141,7 @@ export default function BookViewingPage({ params }: PageProps) {
       >
         <div className="container-custom">
           <span
+            data-reveal="fade"
             style={{
               fontFamily: "'Outfit', sans-serif",
               fontSize: "0.85rem",
@@ -125,6 +154,7 @@ export default function BookViewingPage({ params }: PageProps) {
             Scheduling Flow
           </span>
           <h1
+            data-split
             style={{
               fontFamily: "'Outfit', sans-serif",
               fontSize: "2.75rem",
@@ -136,6 +166,8 @@ export default function BookViewingPage({ params }: PageProps) {
             Book a Viewing
           </h1>
           <p
+            data-reveal
+            data-reveal-delay="0.15"
             style={{
               maxWidth: "600px",
               margin: "0 auto",
@@ -162,12 +194,13 @@ export default function BookViewingPage({ params }: PageProps) {
         >
           {/* Left Column: Selected Property Summary Card */}
           <div>
-            <span className="section-label">Selected Property</span>
-            <h2 className="section-title" style={{ marginBottom: "1.5rem", fontSize: "1.75rem" }}>
+            <span data-reveal="fade" className="section-label">Selected Property</span>
+            <h2 data-split className="section-title" style={{ marginBottom: "1.5rem", fontSize: "1.75rem" }}>
               Walkthrough Details
             </h2>
 
             <div
+              data-reveal
               style={{
                 background: "#fff",
                 border: "1px solid var(--color-stone-200)",
@@ -276,6 +309,7 @@ export default function BookViewingPage({ params }: PageProps) {
 
           {/* Right Column: Interactive Booking Request Form */}
           <div
+            data-reveal="right"
             style={{
               background: "#fff",
               border: "1px solid var(--color-stone-200)",
@@ -355,22 +389,6 @@ export default function BookViewingPage({ params }: PageProps) {
                   Book Viewing Slot
                 </h3>
 
-                {error && (
-                  <div
-                    style={{
-                      background: "rgba(239, 68, 68, 0.08)",
-                      border: "1px solid rgba(239, 68, 68, 0.15)",
-                      color: "#dc2626",
-                      padding: "0.75rem",
-                      borderRadius: "var(--radius-md)",
-                      fontSize: "0.85rem",
-                      textAlign: "center",
-                    }}
-                  >
-                    {error}
-                  </div>
-                )}
-
                 {/* Name */}
                 <div>
                   <label className="input-label">Full Name</label>
@@ -418,28 +436,49 @@ export default function BookViewingPage({ params }: PageProps) {
                     required
                     min={today}
                     value={preferredDate}
-                    onChange={(e) => setPreferredDate(e.target.value)}
+                    onChange={(e) => {
+                      setPreferredDate(e.target.value);
+                      setCheckingSlots(Boolean(e.target.value));
+                    }}
                     className="input-field"
                   />
                 </div>
 
                 {/* Preferred Time Slot */}
-                <div>
-                  <label className="input-label">Preferred Time Slot</label>
-                  <select
-                    required
-                    value={preferredTime}
-                    onChange={(e) => setPreferredTime(e.target.value)}
-                    className="input-field"
-                    style={{ appearance: "auto" }}
-                  >
-                    <option value="">Select a time slot</option>
-                    <option value="09:00 AM - 11:00 AM">Morning (09:00 AM - 11:00 AM)</option>
-                    <option value="11:00 AM - 01:00 PM">Mid-Day (11:00 AM - 01:00 PM)</option>
-                    <option value="02:00 PM - 04:00 PM">Afternoon (02:00 PM - 04:00 PM)</option>
-                    <option value="04:00 PM - 06:00 PM">Late Afternoon (04:00 PM - 06:00 PM)</option>
-                  </select>
-                </div>
+                <fieldset className="slot-picker" disabled={!preferredDate || checkingSlots}>
+                  <legend className="input-label">Preferred Time Slot</legend>
+                  {!preferredDate ? (
+                    <p className="slot-picker__hint">Pick a date to see available times.</p>
+                  ) : bookedSlots.length === TIME_SLOTS.length ? (
+                    <p className="slot-picker__hint slot-picker__hint--full">
+                      This day is fully booked for this property. Please choose another day.
+                    </p>
+                  ) : null}
+                  <div className="slot-picker__grid" role="radiogroup" aria-label="Time slot">
+                    {TIME_SLOTS.map((slot) => {
+                      const booked = bookedSlots.includes(slot.value);
+                      const selected = preferredTime === slot.value;
+                      return (
+                        <button
+                          key={slot.value}
+                          type="button"
+                          role="radio"
+                          aria-checked={selected}
+                          disabled={booked || !preferredDate || checkingSlots}
+                          onClick={() => {
+                            setPreferredTime(slot.value);
+                            setError("");
+                          }}
+                          className={`slot${selected ? " is-selected" : ""}${booked ? " is-booked" : ""}`}
+                        >
+                          <span className="slot__label">{slot.label}</span>
+                          <span className="slot__time">{slot.value}</span>
+                          {booked && <span className="slot__badge">Booked</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </fieldset>
 
                 {/* Special Message Notes */}
                 <div>
@@ -453,6 +492,23 @@ export default function BookViewingPage({ params }: PageProps) {
                     style={{ resize: "none" }}
                   />
                 </div>
+
+                {error && (
+                  <div
+                    role="alert"
+                    style={{
+                      background: "rgba(239, 68, 68, 0.08)",
+                      border: "1px solid rgba(239, 68, 68, 0.15)",
+                      color: "#dc2626",
+                      padding: "0.75rem",
+                      borderRadius: "var(--radius-md)",
+                      fontSize: "0.85rem",
+                      textAlign: "center",
+                    }}
+                  >
+                    {error}
+                  </div>
+                )}
 
                 <button
                   type="submit"

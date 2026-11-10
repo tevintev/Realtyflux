@@ -17,7 +17,7 @@ export const companyInfo: CompanyInfo = {
     facebook: "https://facebook.com/realtyflux",
     instagram: "https://instagram.com/realtyflux",
     twitter: "https://twitter.com/realtyflux",
-    linkedin: "https://linkedin.com/company/realtyflux",
+    tiktok: "https://tiktok.com/@realtyflux",
     whatsapp: "https://wa.me/254700123456",
   },
   stats: {

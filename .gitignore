@@ -33,9 +33,16 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# user-uploaded property/agent media — served dynamically from src/app/uploads,
+# not tracked in git (see src/app/api/upload/route.ts)
+/uploads
+
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local database container config (holds the DB password) and data dumps
+/db/

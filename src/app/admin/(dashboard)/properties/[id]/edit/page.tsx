@@ -11,10 +11,13 @@ export default async function EditPropertyPage({ params }: EditPropertyPageProps
   const resolvedParams = await params;
   const { id } = resolvedParams;
 
-  const property = await db.property.findUnique({
-    where: { id },
-    include: { images: { orderBy: { sortOrder: "asc" } } },
-  });
+  const [property, agents] = await Promise.all([
+    db.property.findUnique({
+      where: { id },
+      include: { images: { orderBy: { sortOrder: "asc" } } },
+    }),
+    db.agent.findMany({ orderBy: { name: "asc" } }),
+  ]);
 
   if (!property) {
     notFound();
@@ -42,7 +45,7 @@ export default async function EditPropertyPage({ params }: EditPropertyPageProps
     amenities: property.amenities,
     yearBuilt: property.yearBuilt,
     isFeatured: property.isFeatured,
-    agent: property.agent,
+    agentId: property.agentId,
     images: property.images.map((img) => ({
       id: img.id,
       imageUrl: img.imageUrl,
@@ -51,5 +54,5 @@ export default async function EditPropertyPage({ params }: EditPropertyPageProps
     })),
   };
 
-  return <PropertyForm initialData={initialData} />;
+  return <PropertyForm initialData={initialData} agents={agents} />;
 }

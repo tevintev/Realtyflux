@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Property } from "@/types/property";
-import { formatPrice } from "@/data/properties";
+import { formatPrice } from "@/lib/format";
 import { getRenderableImageSrc } from "@/lib/image-path";
 
 interface PropertyCardProps {
@@ -25,6 +25,8 @@ export default function PropertyCard({ property }: PropertyCardProps) {
   return (
     <Link
       href={`/properties/${property.slug}`}
+      data-tilt
+      data-cursor="View"
       style={{ textDecoration: "none", color: "inherit", display: "block" }}
     >
       <article
@@ -37,6 +39,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
       >
         {/* Image */}
         <div
+          className="card-media"
           style={{
             position: "relative",
             width: "100%",

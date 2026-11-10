@@ -23,7 +23,7 @@ interface PropertyInput {
   amenities: string[];
   yearBuilt?: number | null;
   isFeatured: boolean;
-  agent?: string;
+  agentId?: string;
   gallery: string[];
 }
 
@@ -60,7 +60,7 @@ export async function createProperty(data: PropertyInput) {
           amenities: data.amenities,
           yearBuilt: data.yearBuilt || null,
           isFeatured: data.isFeatured,
-          agent: data.agent || null,
+          agentId: data.agentId || null,
         },
       });
 
@@ -124,7 +124,7 @@ export async function updateProperty(id: string, data: PropertyInput) {
           amenities: data.amenities,
           yearBuilt: data.yearBuilt || null,
           isFeatured: data.isFeatured,
-          agent: data.agent || null,
+          agentId: data.agentId || null,
           updatedAt: new Date(),
         },
       });

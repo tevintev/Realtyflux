@@ -19,7 +19,7 @@ model CompanySettings {
   facebookUrl  String?  @db.VarChar(500)
   instagramUrl String?  @db.VarChar(500)
   twitterUrl   String?  @db.VarChar(500)
-  linkedinUrl  String?  @db.VarChar(500)
+  tiktokUrl    String?  @db.VarChar(500)
   createdAt    DateTime @default(now()) @db.Timestamptz
   updatedAt    DateTime @default(now()) @db.Timestamptz
 
@@ -47,7 +47,8 @@ model Property {
   amenities        String[]        @default([])
   yearBuilt        Int?
   isFeatured       Boolean         @default(false)
-  agent            String?         @db.VarChar(100)
+  agentId          String?         @db.Uuid
+  agent            Agent?          @relation(fields: [agentId], references: [id], onDelete: SetNull)
   createdAt        DateTime        @default(now()) @db.Timestamptz
   updatedAt        DateTime        @default(now()) @db.Timestamptz
   images           PropertyImage[]
@@ -100,6 +101,20 @@ model Message {
   property   Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
 
   @@map("messages")
+}
+
+model Agent {
+  id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String     @db.VarChar(100)
+  email      String?    @db.VarChar(255)
+  phone      String?    @db.VarChar(50)
+  photo      String?    @db.VarChar(500)
+  bio        String?
+  createdAt  DateTime   @default(now()) @db.Timestamptz
+  updatedAt  DateTime   @default(now()) @db.Timestamptz
+  properties Property[]
+
+  @@map("agents")
 }
 
 model AdminUser {
