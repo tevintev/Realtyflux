@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { isAdmin, NOT_ADMIN_ERROR } from "@/lib/require-admin";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { TIME_SLOTS, slotByValue, slotForTime } from "@/lib/booking-slots";
@@ -110,6 +111,7 @@ export async function createBooking(data: BookingInput) {
 }
 
 export async function updateBookingStatus(bookingId: string, status: string) {
+  if (!(await isAdmin())) return { error: NOT_ADMIN_ERROR };
   try {
     if (status === BLOCKING_STATUS) {
       const booking = await db.booking.findUnique({
@@ -148,6 +150,7 @@ export async function updateBookingStatus(bookingId: string, status: string) {
 }
 
 export async function deleteBooking(bookingId: string) {
+  if (!(await isAdmin())) return { error: NOT_ADMIN_ERROR };
   try {
     await db.booking.delete({
       where: { id: bookingId },

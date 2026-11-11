@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { isAdmin, NOT_ADMIN_ERROR } from "@/lib/require-admin";
 import { revalidatePath } from "next/cache";
 
 interface PropertyInput {
@@ -28,6 +29,7 @@ interface PropertyInput {
 }
 
 export async function createProperty(data: PropertyInput) {
+  if (!(await isAdmin())) return { error: NOT_ADMIN_ERROR };
   try {
     // Check if slug is unique
     const existing = await db.property.findUnique({
@@ -88,6 +90,7 @@ export async function createProperty(data: PropertyInput) {
 }
 
 export async function updateProperty(id: string, data: PropertyInput) {
+  if (!(await isAdmin())) return { error: NOT_ADMIN_ERROR };
   try {
     // Check if slug is unique excluding this property
     const existing = await db.property.findFirst({
@@ -159,6 +162,7 @@ export async function updateProperty(id: string, data: PropertyInput) {
 }
 
 export async function deleteProperty(id: string) {
+  if (!(await isAdmin())) return { error: NOT_ADMIN_ERROR };
   try {
     await db.property.delete({
       where: { id },

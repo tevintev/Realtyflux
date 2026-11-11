@@ -101,6 +101,74 @@ body {
   }
 }
 
+/* Hero slides set in the admin (up to three) turn over like book pages. */
+.hero-slide {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.hero-slide img {
+  will-change: transform;
+}
+
+.hero-dots {
+  position: absolute;
+  z-index: 3;
+  right: 1.75rem;
+  bottom: 2rem;
+  display: none;
+  gap: 0.5rem;
+}
+
+html.motion .hero-dots {
+  display: flex;
+}
+
+.hero-dot {
+  position: relative;
+  width: 38px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.hero-dot::before,
+.hero-dot__fill {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 2px;
+}
+
+.hero-dot::before {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.hero-dot__fill {
+  background: #f3d77c;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+@media (max-width: 767px) {
+  /* Under the navbar, clear of the headline and the Scroll hint. */
+  .hero-dots {
+    right: auto;
+    left: 1.5rem;
+    bottom: auto;
+    top: 5.5rem;
+  }
+}
+
 /* Reveal animations start elements off to the side; clip them so phones don't
    widen the layout viewport and zoom the page out. */
 main {
@@ -1079,6 +1147,27 @@ html:not(.motion) .statement__progress {
 
 .showcase__media:hover img {
   transform: scale(1.05);
+}
+
+/* While the pinned slides are moving the pointer ignores them, and button
+   transitions are switched off. Otherwise the text slides under a still mouse
+   and the Explore buttons flicker between hover and rest. */
+.showcase.is-scrubbing .showcase__copy a,
+.showcase.is-scrubbing .showcase__media {
+  pointer-events: none;
+}
+
+.showcase.is-scrubbing .btn-primary {
+  transition: none;
+}
+
+/* Touch screens keep :hover after a tap, which left the button lifted. */
+@media (hover: none) {
+  .showcase .btn-primary:hover {
+    transform: none;
+    box-shadow: none;
+    background: var(--accent-primary);
+  }
 }
 
 .showcase__foot {

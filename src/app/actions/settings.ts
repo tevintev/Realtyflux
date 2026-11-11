@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { getSession } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { companyInfo as staticCompanyInfo } from "@/data/company";
 
@@ -16,7 +17,10 @@ export interface CompanySettingsInput {
   instagramUrl?: string;
   twitterUrl?: string;
   tiktokUrl?: string;
+  heroImages?: string[];
 }
+
+const MAX_HERO_IMAGES = 3;
 
 /**
  * Fetch the single company settings row.
@@ -52,6 +56,28 @@ export async function getCompanySettings() {
   }
 }
 
+// Hero images must be files this site stored itself (see /api/upload), at most three.
+// Social links must be one clean web address: no spaces, http(s) only.
+// Returns the tidy URL, "" when empty, or null when it is not a valid link.
+function cleanSocialUrl(value?: string): string | null {
+  const raw = (value ?? "").trim();
+  if (!raw) return "";
+  if (/\s/.test(raw)) return null;
+  const url = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname.includes(".") ? url : null;
+  } catch {
+    return null;
+  }
+}
+
+function cleanHeroImages(list?: string[]): string[] {
+  return (list ?? [])
+    .filter((src): src is string => typeof src === "string" && /^\/uploads\/[A-Za-z0-9._-]+$/.test(src))
+    .slice(0, MAX_HERO_IMAGES);
+}
+
 // wa.me needs the number in international format, digits only. Kenyan numbers
 // typed locally ("0796 821 718" or "796821718") are given the 254 country code.
 function whatsappLink(phone?: string | null): string | undefined {
@@ -78,6 +104,7 @@ export async function getMergedCompanyInfo() {
     phone: dbSettings.phone || staticCompanyInfo.phone,
     email: dbSettings.email || staticCompanyInfo.email,
     address: dbSettings.address || staticCompanyInfo.address,
+    heroImages: dbSettings.heroImages ?? [],
     socialLinks: {
       ...staticCompanyInfo.socialLinks,
       facebook: dbSettings.facebookUrl || staticCompanyInfo.socialLinks.facebook,
@@ -94,6 +121,17 @@ export async function getMergedCompanyInfo() {
  * Update the company settings row (upserts if somehow missing).
  */
 export async function updateCompanySettings(data: CompanySettingsInput) {
+  // Server actions can be called directly, so check the admin session here.
+  const session = await getSession();
+  if (!session) return { error: "Please sign in as an admin to change settings." };
+
+  const social: Record<string, string> = {};
+  for (const [label, key] of [["Facebook", "facebookUrl"], ["Instagram", "instagramUrl"], ["Twitter", "twitterUrl"], ["TikTok", "tiktokUrl"]] as const) {
+    const clean = cleanSocialUrl(data[key]);
+    if (clean === null) return { error: `The ${label} link is not a valid web address (no spaces, e.g. https://facebook.com/yourpage).` };
+    social[key] = clean;
+  }
+
   try {
     const existing = await db.companySettings.findFirst({
       orderBy: { createdAt: "asc" },
@@ -110,10 +148,11 @@ export async function updateCompanySettings(data: CompanySettingsInput) {
           email: data.email || null,
           phone: data.phone || null,
           address: data.address || null,
-          facebookUrl: data.facebookUrl || null,
-          instagramUrl: data.instagramUrl || null,
-          twitterUrl: data.twitterUrl || null,
-          tiktokUrl: data.tiktokUrl || null,
+          facebookUrl: social.facebookUrl || null,
+          instagramUrl: social.instagramUrl || null,
+          twitterUrl: social.twitterUrl || null,
+          tiktokUrl: social.tiktokUrl || null,
+          heroImages: cleanHeroImages(data.heroImages),
           updatedAt: new Date(),
         },
       });
@@ -127,10 +166,11 @@ export async function updateCompanySettings(data: CompanySettingsInput) {
           email: data.email || null,
           phone: data.phone || null,
           address: data.address || null,
-          facebookUrl: data.facebookUrl || null,
-          instagramUrl: data.instagramUrl || null,
-          twitterUrl: data.twitterUrl || null,
-          tiktokUrl: data.tiktokUrl || null,
+          facebookUrl: social.facebookUrl || null,
+          instagramUrl: social.instagramUrl || null,
+          twitterUrl: social.twitterUrl || null,
+          tiktokUrl: social.tiktokUrl || null,
+          heroImages: cleanHeroImages(data.heroImages),
         },
       });
     }

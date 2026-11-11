@@ -2,26 +2,18 @@
 
 import { useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   gsap,
   SplitText,
   useGSAP,
   motionEnabled,
   isPageTransitioning,
+  prefersReducedMotion,
 } from "@/lib/motion";
+import { isOptimizable } from "@/lib/image-path";
 
-interface Particle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  life: number;
-  maxLife: number;
-  size: number;
-  hue: number;
-}
-
-export default function Hero() {
+export default function Hero({ images = [] }: { images?: string[] }) {
   const sectionRef = useRef<HTMLElement>(null);
   const bgScrollRef = useRef<HTMLDivElement>(null);
   const bgMouseRef = useRef<HTMLDivElement>(null);
@@ -29,10 +21,7 @@ export default function Hero() {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const mouseTo = useRef<{ x: (v: number) => void; y: (v: number) => void } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const particlesRef = useRef<Particle[]>([]);
   const mouseRef = useRef({ x: -100, y: -100 });
-  const animFrameRef = useRef<number>(0);
-  const lastSpawnRef = useRef(0);
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -106,112 +95,287 @@ export default function Hero() {
     { scope: sectionRef }
   );
 
+  // Homepage slides (up to three images, set in the admin): each turns over
+  // like a book page onto the next, then holds for a few seconds.
+  useGSAP(
+    () => {
+      if (!motionEnabled() || images.length < 2) return;
+      const section = sectionRef.current!;
+      const slides = gsap.utils.toArray<HTMLElement>(".hero-slide", section);
+      const photos = slides.map((slide) => slide.querySelector("img"));
+      const dots = gsap.utils.toArray<HTMLElement>(".hero-dot", section);
+      const fills = gsap.utils.toArray<HTMLElement>(".hero-dot__fill", section);
+      const HOLD = 6;
+      const SLIDE = 1.5;
+      let current = 0;
+      let busy = false;
+
+      gsap.set(slides[0].parentElement, { perspective: 1600 });
+      gsap.set(slides, { autoAlpha: (i: number) => (i === 0 ? 1 : 0), rotateY: 0, zIndex: (i: number) => (i === 0 ? 2 : 1) });
+
+      const drift = (i: number) =>
+        gsap.fromTo(photos[i], { scale: 1.14 }, { scale: 1, duration: HOLD + SLIDE * 2, ease: "none", overwrite: true });
+
+      const markActive = (i: number) => {
+        dots.forEach((dot, n) => dot.classList.toggle("is-active", n === i));
+        fills.forEach((fill, n) => {
+          gsap.killTweensOf(fill);
+          if (n === i) gsap.fromTo(fill, { scaleX: 0 }, { scaleX: 1, duration: HOLD, ease: "none" });
+          else gsap.set(fill, { scaleX: 0 });
+        });
+      };
+
+      const autoplay = gsap.delayedCall(HOLD, () => go((current + 1) % slides.length, 1));
+
+      function go(to: number, dir: 1 | -1) {
+        if (busy || to === current) return;
+        busy = true;
+        autoplay.pause();
+        const from = current;
+        current = to;
+        markActive(to);
+        drift(to);
+        // Page turn: the current photo swings away like a page of a book,
+        // hinged on one edge, revealing the next photo lying underneath.
+        const hinge = dir > 0 ? "0% 50%" : "100% 50%";
+        gsap.set(slides[to], { autoAlpha: 1, rotateY: 0, filter: "brightness(0.55)", scale: 1.05, zIndex: 2 });
+        gsap.set(slides[from], { zIndex: 3, transformOrigin: hinge, rotateY: 0, filter: "brightness(1)" });
+        gsap
+          .timeline({
+            onComplete: () => {
+              gsap.set(slides[from], { autoAlpha: 0, rotateY: 0, filter: "none", zIndex: 1 });
+              gsap.set(slides[to], { filter: "none", scale: 1, zIndex: 2 });
+              busy = false;
+              autoplay.restart(true);
+            },
+          })
+          .to(slides[from], { rotateY: -100 * dir, filter: "brightness(0.6)", duration: SLIDE, ease: "power2.inOut" }, 0)
+          .to(slides[from], { autoAlpha: 0, duration: 0.25, ease: "none" }, SLIDE - 0.25)
+          .to(slides[to], { filter: "brightness(1)", scale: 1, duration: SLIDE, ease: "power2.out" }, 0);
+      }
+
+      markActive(0);
+      drift(0);
+
+      // Only advance while the hero is on screen and the tab is in front.
+      let onScreen = true;
+      const syncPlayback = () => {
+        if (busy) return;
+        if (onScreen && !document.hidden) autoplay.resume();
+        else autoplay.pause();
+      };
+      const observer = new IntersectionObserver(([entry]) => {
+        onScreen = entry.isIntersecting;
+        syncPlayback();
+      });
+      observer.observe(section);
+      document.addEventListener("visibilitychange", syncPlayback);
+
+      const clicks = dots.map((dot, i) => {
+        const onClick = () => go(i, i > current ? 1 : -1);
+        dot.addEventListener("click", onClick);
+        return () => dot.removeEventListener("click", onClick);
+      });
+
+      return () => {
+        autoplay.kill();
+        observer.disconnect();
+        document.removeEventListener("visibilitychange", syncPlayback);
+        clicks.forEach((off) => off());
+      };
+    },
+    { scope: sectionRef, dependencies: [images.length] }
+  );
+
+  // Cursor trail: a drift of gold dust and twinkling sparkles that follows the
+  // mouse, with a soft warm glow trailing behind it. It needs a real pointer
+  // and motion to be allowed, so touch screens skip it entirely.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    if (prefersReducedMotion() || !window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    type Mote = {
+      kind: "dust" | "spark" | "ring";
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      life: number;
+      max: number;
+      size: number;
+      rgb: string;
+      phase: number;
+      spin: number;
+      angle: number;
+    };
+    const motes: Mote[] = [];
+    const GOLD = ["255,236,170", "246,214,120", "232,190,90", "255,247,222"];
+    const EMERALD = "110,231,183";
+    const MAX_MOTES = 150;
+
+    let w = 0;
+    let h = 0;
     const resize = () => {
       const parent = canvas.parentElement;
-      if (parent) {
-        canvas.width = parent.clientWidth;
-        canvas.height = parent.clientHeight;
-      }
+      if (!parent) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = parent.clientWidth;
+      h = parent.clientHeight;
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
     window.addEventListener("resize", resize);
 
-    const spawnParticles = (now: number) => {
-      if (mouseRef.current.x < 0) return;
-      // Spawn 2-3 particles every 16ms (~60fps)
-      if (now - lastSpawnRef.current < 16) return;
-      lastSpawnRef.current = now;
+    let onScreen = true;
+    const observer = new IntersectionObserver(([entry]) => {
+      onScreen = entry.isIntersecting;
+    });
+    observer.observe(canvas);
 
-      const count = 2 + Math.floor(Math.random() * 2);
+    const rand = (a: number, b: number) => a + Math.random() * (b - a);
+
+    // More movement leaves more sparkle; a still mouse leaves none.
+    const spawn = (x: number, y: number, speed: number) => {
+      const count = Math.min(4, 1 + Math.floor(speed / 16));
       for (let i = 0; i < count; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 0.3 + Math.random() * 1.2;
-        const life = 40 + Math.random() * 50;
-        particlesRef.current.push({
-          x: mouseRef.current.x + (Math.random() - 0.5) * 8,
-          y: mouseRef.current.y + (Math.random() - 0.5) * 8,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed - 0.3, // slight upward drift
-          life,
-          maxLife: life,
-          size: 1.5 + Math.random() * 3,
-          hue: 140 + Math.random() * 30, // green range 140-170
+        const roll = Math.random();
+        const kind: Mote["kind"] = roll < 0.36 ? "spark" : roll < 0.46 ? "ring" : "dust";
+        const max = kind === "dust" ? rand(0.9, 1.6) : kind === "spark" ? rand(0.8, 1.4) : rand(1, 1.6);
+        motes.push({
+          kind,
+          x: x + rand(-6, 6),
+          y: y + rand(-6, 6),
+          vx: rand(-22, 22),
+          vy: rand(-46, -10), // lifts gently, like dust in light
+          life: max,
+          max,
+          size: kind === "dust" ? rand(1, 2.7) : kind === "spark" ? rand(7, 15) : rand(7, 17),
+          rgb: kind !== "ring" && Math.random() < 0.12 ? EMERALD : GOLD[Math.floor(Math.random() * GOLD.length)],
+          phase: rand(0, Math.PI * 2),
+          spin: rand(-1.4, 1.4),
+          angle: rand(0, Math.PI),
         });
       }
+      if (motes.length > MAX_MOTES) motes.splice(0, motes.length - MAX_MOTES);
     };
 
-    const animate = (now: number) => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      spawnParticles(now);
+    // Concave four-point star: the classic sparkle shape.
+    const star = (r: number) => {
+      ctx.beginPath();
+      ctx.moveTo(0, -r);
+      ctx.quadraticCurveTo(0, 0, r, 0);
+      ctx.quadraticCurveTo(0, 0, 0, r);
+      ctx.quadraticCurveTo(0, 0, -r, 0);
+      ctx.quadraticCurveTo(0, 0, 0, -r);
+      ctx.fill();
+    };
 
-      const particles = particlesRef.current;
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.life--;
+    let raf = 0;
+    let last = performance.now();
+    let prevX = -1;
+    let prevY = -1;
+    let glowX = -1;
+    let glowY = -1;
+
+    const frame = (now: number) => {
+      raf = requestAnimationFrame(frame);
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      if (!onScreen || document.hidden) return;
+
+      ctx.clearRect(0, 0, w, h);
+      const m = mouseRef.current;
+      const hovering = m.x >= 0;
+
+      if (hovering) {
+        if (prevX >= 0) {
+          const dist = Math.hypot(m.x - prevX, m.y - prevY);
+          if (dist > 3) spawn(m.x, m.y, dist);
+        }
+        prevX = m.x;
+        prevY = m.y;
+        if (glowX < 0) {
+          glowX = m.x;
+          glowY = m.y;
+        }
+        glowX += (m.x - glowX) * Math.min(1, dt * 8);
+        glowY += (m.y - glowY) * Math.min(1, dt * 8);
+      } else {
+        prevX = prevY = glowX = glowY = -1;
+      }
+
+      ctx.globalCompositeOperation = "lighter";
+
+      if (hovering) {
+        const glow = ctx.createRadialGradient(glowX, glowY, 0, glowX, glowY, 170);
+        glow.addColorStop(0, "rgba(255, 224, 150, 0.17)");
+        glow.addColorStop(0.45, "rgba(255, 200, 100, 0.06)");
+        glow.addColorStop(1, "rgba(255, 200, 100, 0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(glowX - 170, glowY - 170, 340, 340);
+      }
+
+      for (let i = motes.length - 1; i >= 0; i--) {
+        const p = motes[i];
+        p.life -= dt;
         if (p.life <= 0) {
-          particles.splice(i, 1);
+          motes.splice(i, 1);
           continue;
         }
+        p.phase += dt * 9;
+        p.angle += p.spin * dt;
+        p.vx *= 1 - dt * 1.4;
+        p.vy *= 1 - dt * 0.7;
+        p.x += (p.vx + Math.sin(p.phase * 0.6) * 8) * dt;
+        p.y += p.vy * dt;
 
-        p.x += p.vx;
-        p.y += p.vy;
-        // Gentle deceleration
-        p.vx *= 0.98;
-        p.vy *= 0.98;
+        const t = p.life / p.max; // 1 -> 0
+        const alpha = Math.min(1, t * 2.2); // hold, then fade out
 
-        const progress = p.life / p.maxLife; // 1 → 0
-        const alpha = progress * 0.85;
-        const size = p.size * (0.4 + progress * 0.6);
-
-        // Glow layer
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, size * 3, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${p.hue}, 85%, 55%, ${alpha * 0.12})`;
-        ctx.fill();
-
-        // Core particle
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${p.hue}, 90%, 65%, ${alpha})`;
-        ctx.fill();
-
-        // Bright center dot
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, size * 0.35, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${p.hue}, 60%, 92%, ${alpha * 0.9})`;
-        ctx.fill();
+        if (p.kind === "dust") {
+          ctx.fillStyle = `rgba(${p.rgb}, ${alpha * 0.9})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = `rgba(${p.rgb}, ${alpha * 0.12})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * 3.2, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (p.kind === "spark") {
+          const twinkle = 0.65 + 0.35 * Math.sin(p.phase);
+          const r = p.size * twinkle * (0.5 + t * 0.5);
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.fillStyle = `rgba(${p.rgb}, ${alpha * 0.22})`;
+          ctx.beginPath();
+          ctx.arc(0, 0, r * 2.1, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.rotate(p.angle);
+          ctx.fillStyle = `rgba(${p.rgb}, ${alpha})`;
+          star(r);
+          ctx.restore();
+        } else {
+          const radius = p.size * (1 + (1 - t) * 1.6); // expands as it fades
+          ctx.strokeStyle = `rgba(${p.rgb}, ${alpha * 0.55})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+          ctx.stroke();
+        }
       }
 
-      // Soft glow around cursor position
-      if (mouseRef.current.x > 0) {
-        const grd = ctx.createRadialGradient(
-          mouseRef.current.x, mouseRef.current.y, 0,
-          mouseRef.current.x, mouseRef.current.y, 120
-        );
-        grd.addColorStop(0, "rgba(74, 222, 128, 0.07)");
-        grd.addColorStop(0.5, "rgba(22, 163, 74, 0.03)");
-        grd.addColorStop(1, "transparent");
-        ctx.fillStyle = grd;
-        ctx.fillRect(
-          mouseRef.current.x - 120,
-          mouseRef.current.y - 120,
-          240, 240
-        );
-      }
-
-      animFrameRef.current = requestAnimationFrame(animate);
+      ctx.globalCompositeOperation = "source-over";
     };
-
-    animFrameRef.current = requestAnimationFrame(animate);
+    raf = requestAnimationFrame(frame);
 
     return () => {
-      cancelAnimationFrame(animFrameRef.current);
+      cancelAnimationFrame(raf);
+      observer.disconnect();
       window.removeEventListener("resize", resize);
     };
   }, []);
@@ -240,7 +404,8 @@ export default function Hero() {
       >
         <div
           ref={bgMouseRef}
-          className="hero-bg"
+          // The default lobby photo is a CSS background; admin-set images replace it.
+          className={images.length ? undefined : "hero-bg"}
           style={{
             position: "absolute",
             inset: "-40px",
@@ -249,7 +414,22 @@ export default function Hero() {
             transform: "scale(1.06)",
             willChange: "transform",
           }}
-        />
+        >
+          {images.map((src, i) => (
+            <div key={`${src}-${i}`} className="hero-slide" style={i === 0 ? undefined : { visibility: "hidden" }}>
+              <Image
+                src={src}
+                alt=""
+                fill
+                priority={i === 0}
+                quality={80}
+                sizes="100vw"
+                unoptimized={!isOptimizable(src)}
+                style={{ objectFit: "cover", objectPosition: "center 35%" }}
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Dark Overlay to increase text legibility */}
@@ -257,7 +437,9 @@ export default function Hero() {
         style={{
           position: "absolute",
           inset: 0,
-          background: "linear-gradient(to bottom, rgba(11, 15, 25, 0.6) 0%, rgba(11, 15, 25, 0.4) 50%, rgba(11, 15, 25, 0.75) 100%)",
+          background: images.length
+            ? "linear-gradient(to bottom, rgba(11, 15, 25, 0.68) 0%, rgba(11, 15, 25, 0.5) 45%, rgba(11, 15, 25, 0.84) 100%)"
+            : "linear-gradient(to bottom, rgba(11, 15, 25, 0.6) 0%, rgba(11, 15, 25, 0.4) 50%, rgba(11, 15, 25, 0.75) 100%)",
           zIndex: 1,
         }}
       />
@@ -425,6 +607,17 @@ export default function Hero() {
           </Link>
         </div>
       </div>
+
+      {/* Slide indicators: one progress line per hero image */}
+      {images.length > 1 && (
+        <div className="hero-dots" role="group" aria-label="Hero slides">
+          {images.map((_, i) => (
+            <button key={i} type="button" className="hero-dot" aria-label={`Show slide ${i + 1}`}>
+              <span className="hero-dot__fill" />
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Scroll indicator */}
       <div

@@ -206,9 +206,14 @@ function initImgReveal(el: HTMLElement): Cleanup {
 
 const registry = new Map<Element, Cleanup>();
 
+// How many elements scan() has newly set up; a scan that finds nothing new
+// needs no ScrollTrigger refresh.
+let registered = 0;
+
 function register(el: Element, init: () => Cleanup) {
   if (registry.has(el) || el.hasAttribute("data-revealed")) return;
   registry.set(el, init());
+  registered++;
 }
 
 function scan() {
@@ -250,6 +255,7 @@ function scan() {
   for (const [variant, children] of freshByVariant) {
     const cleanups = initStagger(children, variant);
     children.forEach((child, i) => registry.set(child, cleanups[i]));
+    registered += children.length;
   }
 }
 
@@ -257,6 +263,14 @@ function teardownAll() {
   for (const cleanup of registry.values()) cleanup();
   registry.clear();
 }
+
+// A refresh re-wraps pinned sections and briefly resets scroll. The observers
+// below report that as a page change, which scheduled another refresh, which
+// changed the page again: a loop that ran for as long as the page was open
+// (stuck snaps, flickering buttons, scrollTo(0) dozens of times a second).
+// Reports that arrive right after a refresh are the refresh's own doing.
+let quietUntil = 0;
+let settledHeight = 0;
 
 let refreshTimer: ReturnType<typeof setTimeout> | undefined;
 function scheduleRefresh() {
@@ -295,18 +309,34 @@ export default function MotionProvider() {
     const queueScan = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
+        const before = registered;
         scan();
-        scheduleRefresh();
+        if (registered !== before) scheduleRefresh();
       });
     };
     scan();
 
+    const onRefreshed = () => {
+      quietUntil = performance.now() + 400;
+      settledHeight = document.body.offsetHeight;
+    };
+    ScrollTrigger.addEventListener("refresh", onRefreshed);
+
+    // Always scan: a page that mounts just after a refresh must still get its
+    // headings and cards set up, or they stay hidden. Scanning is cheap and
+    // only schedules a refresh when it finds something new, so the refresh's
+    // own DOM changes cannot start a loop.
     const mutations = new MutationObserver(queueScan);
     mutations.observe(document.body, { childList: true, subtree: true });
 
     // Late-loading images and data change the page height; keep trigger
-    // positions in sync with the real layout.
-    const resizes = new ResizeObserver(scheduleRefresh);
+    // positions in sync with the real layout. Only a real change in height
+    // counts, not the pin spacing a refresh itself adds and removes.
+    const resizes = new ResizeObserver(() => {
+      if (performance.now() < quietUntil) return;
+      if (Math.abs(document.body.offsetHeight - settledHeight) < 2) return;
+      scheduleRefresh();
+    });
     resizes.observe(document.body);
 
     let progressTween: gsap.core.Tween | undefined;
@@ -324,6 +354,7 @@ export default function MotionProvider() {
 
     return () => {
       cancelAnimationFrame(frame);
+      ScrollTrigger.removeEventListener("refresh", onRefreshed);
       mutations.disconnect();
       resizes.disconnect();
       if (progressTween) killTween(progressTween);

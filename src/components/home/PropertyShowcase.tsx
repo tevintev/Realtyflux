@@ -84,6 +84,8 @@ export default function PropertyShowcase() {
       const media = slides.map((s) => s.querySelector(".showcase__media"));
       const copy = slides.map((s) => s.querySelector(".showcase__copy"));
       const steps = slides.length - 1;
+      const cleanups: Array<() => void> = [];
+      let settle: ReturnType<typeof setTimeout> | undefined;
       // Scroll distance per slide. Phones get more room: a single swipe with
       // momentum covers a lot of ground, and slides used to fly past.
       const scrollPerStep = () => window.innerHeight * (window.innerWidth < 768 ? 1.5 : 1.15);
@@ -101,7 +103,12 @@ export default function PropertyShowcase() {
           pin: true,
           scrub: 1.2,
           snap: {
-            snapTo: 1 / steps,
+            snapTo: (progress: number, self?: ScrollTrigger) => {
+              const pos = progress * steps;
+              // Past 20% of a card in the direction of travel, commit to the next card.
+              const target = (self?.direction ?? 1) > 0 ? Math.floor(pos + 0.8) : Math.ceil(pos - 0.8);
+              return Math.min(steps, Math.max(0, target)) / steps;
+            },
             // Ignore flick velocity so a fast swipe settles on the next slide
             // in its direction instead of overshooting by several.
             inertia: false,
@@ -111,6 +118,12 @@ export default function PropertyShowcase() {
           },
           invalidateOnRefresh: true,
           onUpdate: (self) => {
+            // While slides move, the pointer must not react to them: the text
+            // slides under a still mouse and the buttons flipped in and out of
+            // hover (see .is-scrubbing in globals.css).
+            section.classList.add("is-scrubbing");
+            clearTimeout(settle);
+            settle = setTimeout(() => section.classList.remove("is-scrubbing"), 180);
             const index = Math.round(self.progress * steps);
             if (counterRef.current) counterRef.current.textContent = pad(index + 1);
             gsap.set(".showcase__progress-bar", { scaleX: self.progress });
@@ -182,15 +195,21 @@ export default function PropertyShowcase() {
         window.addEventListener("touchend", settleSoon, { passive: true });
         window.addEventListener("touchcancel", settleSoon, { passive: true });
         window.addEventListener("scroll", onScroll, { passive: true });
-        return () => {
+        cleanups.push(() => {
           clearTimeout(idle);
           window.removeEventListener("touchstart", onTouchStart);
           window.removeEventListener("touchmove", onTouchMove);
           window.removeEventListener("touchend", settleSoon);
           window.removeEventListener("touchcancel", settleSoon);
           window.removeEventListener("scroll", onScroll);
-        };
+        });
       }
+
+      return () => {
+        clearTimeout(settle);
+        section.classList.remove("is-scrubbing");
+        cleanups.forEach((fn) => fn());
+      };
     },
     { scope: sectionRef }
   );
@@ -219,7 +238,6 @@ export default function PropertyShowcase() {
                     <Link
                       href={`/properties?type=${slide.slug}`}
                       className="btn-primary"
-                      data-magnetic
                     >
                       Explore {slide.name}
                       {count !== undefined && (

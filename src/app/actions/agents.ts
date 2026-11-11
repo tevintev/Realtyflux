@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { isAdmin, NOT_ADMIN_ERROR } from "@/lib/require-admin";
 import { revalidatePath } from "next/cache";
 
 interface AgentInput {
@@ -12,6 +13,7 @@ interface AgentInput {
 }
 
 export async function createAgent(data: AgentInput) {
+  if (!(await isAdmin())) return { error: NOT_ADMIN_ERROR };
   try {
     if (!data.name?.trim()) {
       return { error: "Agent name is required." };
@@ -36,6 +38,7 @@ export async function createAgent(data: AgentInput) {
 }
 
 export async function updateAgent(id: string, data: AgentInput) {
+  if (!(await isAdmin())) return { error: NOT_ADMIN_ERROR };
   try {
     if (!data.name?.trim()) {
       return { error: "Agent name is required." };
@@ -63,6 +66,7 @@ export async function updateAgent(id: string, data: AgentInput) {
 }
 
 export async function deleteAgent(id: string) {
+  if (!(await isAdmin())) return { error: NOT_ADMIN_ERROR };
   try {
     // onDelete: SetNull on Property.agent — deleting an agent unassigns
     // them from any properties rather than failing or cascading.

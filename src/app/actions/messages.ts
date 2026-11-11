@@ -1,9 +1,11 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { isAdmin, NOT_ADMIN_ERROR } from "@/lib/require-admin";
 import { revalidatePath } from "next/cache";
 
 export async function toggleMessageReadStatus(messageId: string, isRead: boolean) {
+  if (!(await isAdmin())) return { error: NOT_ADMIN_ERROR };
   try {
     await db.message.update({
       where: { id: messageId },
@@ -19,6 +21,7 @@ export async function toggleMessageReadStatus(messageId: string, isRead: boolean
 }
 
 export async function deleteMessage(messageId: string) {
+  if (!(await isAdmin())) return { error: NOT_ADMIN_ERROR };
   try {
     await db.message.delete({
       where: { id: messageId },

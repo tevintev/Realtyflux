@@ -13,6 +13,11 @@ import {
   Upload,
   Link as LinkIcon,
   CheckCircle,
+  Image as ImageIcon,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Plus,
 } from "lucide-react";
 import { updateCompanySettings, type CompanySettingsInput } from "@/app/actions/settings";
 
@@ -29,9 +34,25 @@ interface CompanySettingsData {
   instagramUrl: string | null;
   twitterUrl: string | null;
   tiktokUrl: string | null;
+  heroImages: string[];
 }
 
-function uploadLogoFile(file: File, onProgress: (p: number) => void) {
+const MAX_HERO_IMAGES = 3;
+
+const iconButtonStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: 30,
+  height: 30,
+  borderRadius: 8,
+  border: "1px solid var(--color-stone-200)",
+  background: "var(--bg-secondary)",
+  color: "var(--text-primary)",
+  cursor: "pointer",
+};
+
+function uploadImageFile(file: File, onProgress: (p: number) => void) {
   return new Promise<string>((resolve, reject) => {
     const formData = new FormData();
     formData.append("files", file);
@@ -46,10 +67,10 @@ function uploadLogoFile(file: File, onProgress: (p: number) => void) {
       if (xhr.status >= 200 && xhr.status < 300 && res?.files?.[0]?.path) {
         resolve(res.files[0].path as string);
       } else {
-        reject(new Error(res?.error || "Logo upload failed."));
+        reject(new Error(res?.error || "Image upload failed."));
       }
     };
-    xhr.onerror = () => reject(new Error("Logo upload failed."));
+    xhr.onerror = () => reject(new Error("Image upload failed."));
     xhr.send(formData);
   });
 }
@@ -66,6 +87,9 @@ export default function CompanySettingsForm({ settings }: { settings: CompanySet
   const [twitterUrl, setTwitterUrl] = useState(settings.twitterUrl || "");
   const [tiktokUrl, setTiktokUrl] = useState(settings.tiktokUrl || "");
   const [logoUrl, setLogoUrl] = useState(settings.logo || "");
+  const [heroImages, setHeroImages] = useState<string[]>(settings.heroImages ?? []);
+  const [heroUploading, setHeroUploading] = useState(false);
+  const [heroProgress, setHeroProgress] = useState(0);
 
   const [saving, setSaving] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
@@ -80,7 +104,7 @@ export default function CompanySettingsForm({ settings }: { settings: CompanySet
     setLogoProgress(0);
     setError("");
     try {
-      const path = await uploadLogoFile(file, setLogoProgress);
+      const path = await uploadImageFile(file, setLogoProgress);
       setLogoUrl(path);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Logo upload failed.");
@@ -91,9 +115,48 @@ export default function CompanySettingsForm({ settings }: { settings: CompanySet
     }
   };
 
+  const handleHeroChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (picked.length === 0) return;
+
+    const room = MAX_HERO_IMAGES - heroImages.length;
+    setError(
+      picked.length > room
+        ? `You can add ${room} more image${room === 1 ? "" : "s"} (maximum ${MAX_HERO_IMAGES}); only the first ${room} will be uploaded.`
+        : ""
+    );
+    setHeroUploading(true);
+    try {
+      for (const file of picked.slice(0, room)) {
+        if (!file.type.startsWith("image/")) throw new Error(`${file.name} is not an image.`);
+        if (file.size > 10 * 1024 * 1024) throw new Error(`${file.name} is larger than 10 MB.`);
+        setHeroProgress(0);
+        const path = await uploadImageFile(file, setHeroProgress);
+        setHeroImages((current) => [...current, path].slice(0, MAX_HERO_IMAGES));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Image upload failed.");
+    } finally {
+      setHeroUploading(false);
+      setHeroProgress(0);
+    }
+  };
+
+  const moveHero = (index: number, step: -1 | 1) =>
+    setHeroImages((list) => {
+      const to = index + step;
+      if (to < 0 || to >= list.length) return list;
+      const next = [...list];
+      [next[index], next[to]] = [next[to], next[index]];
+      return next;
+    });
+
+  const removeHero = (index: number) => setHeroImages((list) => list.filter((_, i) => i !== index));
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (logoUploading) return;
+    if (logoUploading || heroUploading) return;
     setSaving(true);
     setError("");
     setSuccess(false);
@@ -110,6 +173,7 @@ export default function CompanySettingsForm({ settings }: { settings: CompanySet
       instagramUrl: instagramUrl || undefined,
       twitterUrl: twitterUrl || undefined,
       tiktokUrl: tiktokUrl || undefined,
+      heroImages,
     };
 
     const res = await updateCompanySettings(payload);
@@ -136,7 +200,7 @@ export default function CompanySettingsForm({ settings }: { settings: CompanySet
         </div>
         <button
           type="submit"
-          disabled={saving || logoUploading}
+          disabled={saving || logoUploading || heroUploading}
           className="btn-primary"
           style={{ padding: "0.65rem 1.75rem", fontSize: "0.9rem", border: "none", display: "flex", alignItems: "center", gap: "0.5rem" }}
         >
@@ -304,6 +368,84 @@ export default function CompanySettingsForm({ settings }: { settings: CompanySet
         </div>
       </div>
 
+      {/* Homepage hero images */}
+      <div className="card" style={{ padding: "1.75rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", paddingBottom: "0.75rem", borderBottom: "1px solid var(--color-stone-200)" }}>
+          <ImageIcon size={18} style={{ color: "#16a34a" }} />
+          <h2 style={{ fontSize: "1.1rem", fontWeight: 700, margin: 0 }}>Homepage Hero Images</h2>
+          <span style={{ marginLeft: "auto", fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+            {heroImages.length} of {MAX_HERO_IMAGES}
+          </span>
+        </div>
+
+        <p style={{ color: "var(--text-secondary)", fontSize: "0.88rem", lineHeight: 1.6, margin: 0 }}>
+          Upload up to {MAX_HERO_IMAGES} photos for the large banner at the top of the homepage. With two or more they
+          slide automatically every few seconds. Landscape photos of at least 1920×1080 work best (10 MB maximum each).
+          With none uploaded, the default lobby photo is used. Click <strong>Save Settings</strong> to publish your changes.
+        </p>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem" }}>
+          {heroImages.map((src, i) => (
+            <div key={`${src}-${i}`} style={{ border: "1px solid var(--color-stone-200)", borderRadius: "var(--radius-md)", overflow: "hidden", background: "var(--bg-secondary)" }}>
+              <div style={{ position: "relative", aspectRatio: "16 / 9", background: "var(--color-stone-100)" }}>
+                <Image src={src} alt={`Hero image ${i + 1}`} fill sizes="260px" style={{ objectFit: "cover" }} unoptimized={!src.startsWith("/")} />
+                <span style={{ position: "absolute", top: 8, left: 8, background: "rgba(0,0,0,0.65)", color: "#fff", borderRadius: 999, padding: "0.1rem 0.55rem", fontSize: "0.75rem", fontWeight: 700 }}>
+                  {i + 1}
+                </span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.45rem 0.5rem" }}>
+                <div style={{ display: "flex", gap: "0.25rem" }}>
+                  <button type="button" onClick={() => moveHero(i, -1)} disabled={i === 0} aria-label="Move earlier" style={{ ...iconButtonStyle, opacity: i === 0 ? 0.35 : 1, cursor: i === 0 ? "default" : "pointer" }}>
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button type="button" onClick={() => moveHero(i, 1)} disabled={i === heroImages.length - 1} aria-label="Move later" style={{ ...iconButtonStyle, opacity: i === heroImages.length - 1 ? 0.35 : 1, cursor: i === heroImages.length - 1 ? "default" : "pointer" }}>
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+                <button type="button" onClick={() => removeHero(i)} aria-label="Remove image" style={{ ...iconButtonStyle, color: "#dc2626" }}>
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {heroImages.length < MAX_HERO_IMAGES && (
+            <label
+              htmlFor="hero-upload"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.4rem",
+                minHeight: 150,
+                border: "2px dashed var(--color-stone-300)",
+                borderRadius: "var(--radius-md)",
+                color: "var(--text-secondary)",
+                fontFamily: "'Outfit', sans-serif",
+                fontWeight: 600,
+                fontSize: "0.88rem",
+                cursor: heroUploading ? "not-allowed" : "pointer",
+                opacity: heroUploading ? 0.7 : 1,
+                transition: "border-color 0.2s ease, color 0.2s ease",
+              }}
+            >
+              <Plus size={22} />
+              {heroUploading ? `Uploading… ${heroProgress}%` : "Add image"}
+              <input
+                id="hero-upload"
+                type="file"
+                multiple
+                accept="image/png,image/jpeg,image/webp,image/avif"
+                onChange={handleHeroChange}
+                disabled={heroUploading}
+                style={{ display: "none" }}
+              />
+            </label>
+          )}
+        </div>
+      </div>
+
       {/* Social Links */}
       <div className="card" style={{ padding: "1.75rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", paddingBottom: "0.75rem", borderBottom: "1px solid var(--color-stone-200)" }}>
@@ -355,7 +497,7 @@ export default function CompanySettingsForm({ settings }: { settings: CompanySet
       <div style={{ display: "flex", justifyContent: "flex-end", paddingBottom: "2rem" }}>
         <button
           type="submit"
-          disabled={saving || logoUploading}
+          disabled={saving || logoUploading || heroUploading}
           className="btn-primary"
           style={{ padding: "0.8rem 2.5rem", fontSize: "0.95rem", border: "none", display: "flex", alignItems: "center", gap: "0.5rem" }}
         >

@@ -575,8 +575,14 @@ export default function Footer({ companyInfo: passedCompanyInfo }: FooterProps =
 
       {/* Footer responsive grid */}
       <style jsx global>{`
+        /* Phones: brand and contact span the width, the two link lists sit side by side. */
         .footer-grid {
-          grid-template-columns: 1fr !important;
+          grid-template-columns: 1fr 1fr !important;
+          gap: 2rem 1.25rem !important;
+        }
+        .footer-grid > :first-child,
+        .footer-grid > :last-child {
+          grid-column: 1 / -1;
         }
         .footer-bottom {
           flex-direction: column !important;
@@ -584,7 +590,11 @@ export default function Footer({ companyInfo: passedCompanyInfo }: FooterProps =
         }
         @media (min-width: 640px) {
           .footer-grid {
-            grid-template-columns: 1fr 1fr !important;
+            gap: 3rem !important;
+          }
+          .footer-grid > :first-child,
+          .footer-grid > :last-child {
+            grid-column: auto;
           }
         }
         @media (min-width: 1024px) {

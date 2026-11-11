@@ -12,6 +12,11 @@ const staticAssetCache = [
 const nextConfig: NextConfig = {
   // Don't advertise the framework/version in responses.
   poweredByHeader: false,
+  images: {
+    // Full-width photos never need more than ~2000px; the default 3840px
+    // versions are slow to generate on first view and heavy to download.
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+  },
   async headers() {
     return [
       { source: "/images/:path*", headers: staticAssetCache },

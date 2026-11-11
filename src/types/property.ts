@@ -33,6 +33,7 @@ export interface Property {
 export interface CompanyInfo {
   name: string;
   logo?: string | null;
+  heroImages?: string[];
   tagline: string;
   mission: string;
   about: string;

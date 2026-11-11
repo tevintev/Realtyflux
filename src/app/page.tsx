@@ -28,7 +28,7 @@ export default async function Home() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       {/* Hero Header Section */}
-      <Hero />
+      <Hero images={companyInfo.heroImages ?? []} />
 
       {/* Embedded Search Component overlaying Hero */}
       <SearchBar />
